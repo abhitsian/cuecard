@@ -1,0 +1,67 @@
+{
+  "id": "product-case",
+  "name": "Product case",
+  "summary": "Product sense, design or improve-a-product answers, graded on the 12-step spine from the user's Combined Framework and the tests in the Criteria Bank.",
+  "modes": ["interviewing"],
+  "nodes": [
+    {"key": "clarify", "label": "Clarify", "about": "Clarifying the prompt: resolving an ambiguous word, asking what can be broken, stating assumptions and scope.",
+     "tests": [
+      {"key": "fork", "question": "Does the speaker resolve an ambiguous word or fork in the prompt (name the readings and pick one, or ask which one)?", "weak": "Didn't resolve the fork in the prompt", "probe": "Ask what they took a key word in the prompt to mean, and what they'd do differently under the other reading."},
+      {"key": "useful", "question": "Would the clarifying questions or assumptions the speaker made change what they do later in the answer?", "weak": "Clarifications that change nothing", "probe": "Ask which of their assumptions, if wrong, would change their answer most."}
+     ]},
+    {"key": "goal", "label": "Business goal", "about": "Why the business wants this: mission, portfolio fit, competition, why now, compressed to one sentence.",
+     "tests": [
+      {"key": "stated", "question": "Does the speaker state in one sentence why the business wants this?", "weak": "No business goal", "probe": "Ask what the company gets out of this if it works."},
+      {"key": "given", "question": "Is the business goal the speaker uses the one given in the prompt or clearly reasoned, rather than a default like 'engagement'?", "weak": "Substituted a default goal", "probe": "Ask why that goal over, say, revenue or retention for this company right now."}
+     ]},
+    {"key": "segment", "label": "Segment and pick", "about": "Naming the ecosystem and user segments, picking one to focus on.",
+     "tests": [
+      {"key": "criterion", "question": "Does the speaker state the rule or criterion used to pick the segment (who pays, daily use, pain severe enough to seek a fix, fit with the business goal, size)?", "weak": "Picked a segment with no stated criterion", "probe": "Ask what made that group the one to start with, without suggesting a criterion."},
+      {"key": "predictive", "question": "Would the segments the speaker named lead to genuinely different products, rather than a decorative cut such as age alone?", "weak": "Segments wouldn't change the design", "probe": "Ask how the product would differ for a segment they didn't pick."},
+      {"key": "trade", "question": "Does the speaker name what or whom they are choosing not to serve, and why?", "weak": "No trade-off named", "probe": "Ask who loses out with this choice."}
+     ]},
+    {"key": "problems", "label": "Problems", "about": "Listing user problems or pains for the chosen segment, before solving.",
+     "tests": [
+      {"key": "range", "question": "Does the speaker list several distinct problems (not one problem restated) before jumping to solutions?", "weak": "Jumped to solutions / one problem", "probe": "Ask them to walk the user's journey stage by stage and say where it breaks."},
+      {"key": "costly", "question": "Does the speaker identify a problem where the user makes an expensive or irreversible mistake, or does cognitive work badly?", "weak": "Only surface-level pains", "probe": "Ask where this user makes a mistake that's costly to undo."}
+     ]},
+    {"key": "prioritize", "label": "Prioritize", "about": "Choosing which problem to solve first, by dependency or impact.",
+     "tests": [
+      {"key": "criterion", "question": "Does the speaker name the criteria used to prioritize (severity, frequency, reach, fit with the business goal, or what depends on what)?", "weak": "Prioritized with no stated criteria", "probe": "Ask what test put that problem first."},
+      {"key": "foundation", "question": "Does the speaker explain which problem, if unsolved, makes the others not matter?", "weak": "No dependency reasoning", "probe": "Ask which problem, left unsolved, makes everything else pointless."}
+     ]},
+    {"key": "product_goal", "label": "Product goal", "about": "Restating the chosen pain as one measurable product goal.",
+     "tests": [
+      {"key": "measurable", "question": "Does the speaker restate the chosen problem as one measurable product goal?", "weak": "No measurable product goal", "probe": "Ask how they'd know, six months in, that this worked."}
+     ]},
+    {"key": "solutions", "label": "Solutions", "about": "Generating a range of solution options before choosing.",
+     "tests": [
+      {"key": "range", "question": "Does the speaker generate several genuinely different solutions (crossing axes such as passive vs active, existing vs new surface, model-layer vs app-layer), not one idea five times?", "weak": "Narrow range of options", "probe": "Ask for an option that works in a completely different way from the ones so far."},
+      {"key": "moonshot", "question": "Does the solution set ladder from practical to ambitious?", "weak": "No ambitious option", "probe": "Ask what they'd build if the technology constraint disappeared."}
+     ]},
+    {"key": "score", "label": "Score and choose", "about": "Scoring options against stated criteria and choosing one.",
+     "tests": [
+      {"key": "visible", "question": "Does the speaker score the options against criteria they state, including the options they reject?", "weak": "Picked a favourite without visible scoring", "probe": "Ask what the strongest option they rejected had going for it."},
+      {"key": "honest", "question": "Does the choice follow from the stated criteria, rather than the criteria being fitted to a pick made earlier?", "weak": "Criteria fitted to the pick", "probe": "Ask what would have to be true for the runner-up to win."}
+     ]},
+    {"key": "design", "label": "Design depth", "about": "Detailing the chosen solution: screens, states, triggers, what the user sees, data, failure handling, the magic moment.",
+     "tests": [
+      {"key": "concrete", "question": "Is the design concrete enough (screens, states, triggers, what the user sees) that an engineer could ask a clarifying question?", "weak": "Capability described, not designed", "probe": "Ask what the user sees on the first screen and what they tap next."},
+      {"key": "failure", "question": "Does the speaker say what happens when it fails or when the system is uncertain?", "weak": "No failure or edge states", "probe": "Ask what the user sees when it gets it wrong."},
+      {"key": "trust", "question": "Does the speaker explain why the user would trust the output, given they can't verify it themselves?", "weak": "Trust not addressed", "probe": "Ask how the user knows the answer is right."}
+     ]},
+    {"key": "risks", "label": "Risks and trade-offs", "about": "Risks to users and business, with mitigations.",
+     "tests": [
+      {"key": "named", "question": "Does the speaker name specific risks or trade-offs with a mitigation each?", "weak": "No risks named", "probe": "Ask what's most likely to go wrong in the first month after launch."}
+     ]},
+    {"key": "metrics", "label": "Metrics", "about": "How success is measured: primary, secondary, leading indicator, guardrails.",
+     "tests": [
+      {"key": "tied", "question": "Does the speaker name a primary metric tied to the product goal and at least one guardrail or counter-metric?", "weak": "Metrics missing or untied", "probe": "Ask what number would tell them to roll it back."}
+     ]},
+    {"key": "ai", "label": "AI judgment", "about": "For AI products: model-layer vs app-layer, evals, failure containment, safety, autonomy boundaries.",
+     "tests": [
+      {"key": "layer", "question": "Does the speaker say whether each fix is at the model layer or the application layer?", "weak": "Model vs app layer not distinguished", "probe": "Ask whether a better model or better product around the same model fixes this."},
+      {"key": "safety", "question": "Does the speaker raise safety, misuse, hallucination handling or how failures are detected and reversed?", "weak": "Safety not raised", "probe": "Ask what the worst output this could produce is, and who catches it."}
+     ]}
+  ]
+}

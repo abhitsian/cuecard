@@ -1,0 +1,43 @@
+{
+  "id": "evals-agents",
+  "name": "AI evals and agents",
+  "summary": "Whether a PM has actually built AI quality systems, from the Evals for PMs course and Reforge notes: defining good, trace reading, triage, code checks vs judges, calibration, datasets, iteration, monitoring, agent decomposition, autonomy.",
+  "modes": ["interviewing"],
+  "nodes": [
+    {"key": "good", "label": "Defining good", "about": "Turning quality into a written bar: rubric, thresholds, golden examples, an 'I don't know' policy.",
+     "tests": [
+      {"key": "bar", "question": "Does the speaker describe a written quality bar with specific criteria or thresholds (not engagement or thumbs-up)?", "weak": "Quality = engagement or vibes", "probe": "Ask what a failing output looked like, in their last product."},
+      {"key": "idk", "question": "Does the speaker treat 'I don't know' or abstaining as a designed behaviour with an expected rate?", "weak": "No abstain policy", "probe": "Ask how often the system should say it doesn't know, and what rate would worry them."}
+     ]},
+    {"key": "traces", "label": "Reading traces", "about": "Manual error analysis of real traces before automating: free-form notes, clustering into failure codes, saturation.",
+     "tests": [
+      {"key": "manual", "question": "Does the speaker describe personally reading real traces or outputs and categorising failures before building automated evals?", "weak": "Jumped straight to dashboards", "probe": "Ask how many traces they read before writing their first eval, and what they found."},
+      {"key": "trace", "question": "Does the speaker treat a trace as more than the chat transcript (tool calls, retrieval, intermediate steps)?", "weak": "Trace = transcript", "probe": "Ask what was in a trace besides the user's message and the answer."}
+     ]},
+    {"key": "triage", "label": "What becomes an eval", "about": "Separating spec gaps (fix the prompt), architecture gaps (engineering) and generalisation gaps (worth an eval).",
+     "tests": [{"key": "triage", "question": "Does the speaker distinguish failures that are fixed directly (prompt or engineering bugs) from those that need an ongoing eval?", "weak": "Evals for everything", "probe": "Ask about a failure they fixed without writing an eval for it."}]},
+    {"key": "checks", "label": "Code checks vs judges", "about": "Deterministic checks first, LLM judges for the subjective remainder.",
+     "tests": [
+      {"key": "code", "question": "Does the speaker use deterministic code checks (format, presence, tool-call sequence, thresholds) before or alongside LLM judges?", "weak": "LLM judge for everything", "probe": "Ask which of their checks didn't need a model at all."},
+      {"key": "binary", "question": "Does the speaker prefer binary pass/fail judges with one criterion each over 1-to-10 quality scores?", "weak": "1-10 multi-criteria judges", "probe": "Ask what the judge's prompt actually said pass looks like."}
+     ]},
+    {"key": "calibration", "label": "Judge calibration", "about": "Measuring judge agreement with expert labels: TPR/TNR, confusion matrix, dev/test split, recalibration.",
+     "tests": [{"key": "measured", "question": "Does the speaker describe measuring the judge against human labels, with separate true-positive and true-negative rates or a confusion matrix, not one agreement percentage?", "weak": "Judge trusted without calibration", "probe": "Ask how often the judge passed something a human would fail."}]},
+    {"key": "dataset", "label": "Datasets", "about": "Building eval sets: hard cases over common ones, size, synthetic vs production data, versioning, contamination.",
+     "tests": [
+      {"key": "hard", "question": "Does the speaker build datasets around hard or failure cases rather than mirroring traffic frequency?", "weak": "Dataset mirrors easy traffic", "probe": "Ask where the hardest cases in their set came from."},
+      {"key": "size", "question": "Does the speaker give concrete dataset sizes or splits and how they changed over time?", "weak": "No sizes or versions", "probe": "Ask how big the set was at launch and six months later."}
+     ]},
+    {"key": "iteration", "label": "Iteration", "about": "Changing one thing at a time, reporting deltas per eval, knowing the noise floor.",
+     "tests": [{"key": "discipline", "question": "Does the speaker describe changing one variable at a time and reading per-eval deltas and failing traces, rather than 'overall quality improved'?", "weak": "Bundled changes, vague gains", "probe": "Ask about a change that looked like a win and turned out to be noise."}]},
+    {"key": "monitoring", "label": "Production monitoring", "about": "Online evals, sampling, drift, user signals, alert ownership.",
+     "tests": [{"key": "online", "question": "Does the speaker describe monitoring quality in production (sampled judges, drift, user edits or corrections) beyond thumbs-up rates?", "weak": "Offline only / thumbs-up", "probe": "Ask how they found out about the last quality regression in production."}]},
+    {"key": "decomposition", "label": "Agent decomposition", "about": "Evaluating agents step by step: routing, tool selection and parameters, handoffs, failure funnels, recovery.",
+     "tests": [
+      {"key": "steps", "question": "Does the speaker break the agent into steps (routing, tool choice, parameters, response handling) and evaluate each, rather than only end-to-end?", "weak": "End-to-end only", "probe": "Ask which step of the agent failed most, and how they knew."},
+      {"key": "compound", "question": "Does the speaker show awareness that step accuracies multiply (e.g. seven steps at 95% is about 70% end to end) or name the earliest bottleneck?", "weak": "No sense of compounding", "probe": "Ask what end-to-end success rate they'd expect from seven steps at 95% each."}
+     ]},
+    {"key": "autonomy", "label": "Autonomy and review", "about": "Where the agent acts alone vs proposes; human review limits; reversibility; override rate and trust.",
+     "tests": [{"key": "boundary", "question": "Does the speaker set autonomy by reversibility and cost of error, with a measure such as override rate, rather than 'add a human in the loop'?", "weak": "\"Human in the loop\" as the whole answer", "probe": "Ask which actions the agent could take without review, and what would earn it more."}]}
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "strategy",
+  "name": "Strategy",
+  "summary": "Strategy as segmentation and differentiation (Shreyas Doshi), with Aakash Gupta's scoring: a clear choice, what is given up, advantage from assets, insight into the market, and what would change the plan.",
+  "modes": ["interviewing", "review", "decision"],
+  "nodes": [
+    {"key": "choice", "label": "The choice", "about": "A one-sentence strategy: where to play and how to win.",
+     "tests": [{"key": "clear", "question": "Does the speaker state a clear strategic choice in a sentence or two, rather than a list of features or initiatives?", "weak": "Features, not a strategy", "probe": "Ask for the strategy in one sentence."}]},
+    {"key": "segments", "label": "Segments", "about": "Needs-based segments and which ones are not priorities.",
+     "tests": [
+      {"key": "needs", "question": "Are the speaker's segments defined by needs or situations rather than demographics or personas?", "weak": "Demographic segments", "probe": "Ask what need the chosen segment has that others don't."},
+      {"key": "nonpriority", "question": "Does the speaker name segments or goals they are explicitly not prioritising?", "weak": "Serves everyone", "probe": "Ask what they are choosing to be bad at."}
+     ]},
+    {"key": "advantage", "label": "Advantage", "about": "Differentiation grounded in assets a competitor can't copy quickly.",
+     "tests": [{"key": "assets", "question": "Does the speaker ground the plan in a specific asset or advantage the company has that a competitor couldn't copy within a year?", "weak": "No real advantage", "probe": "Ask what the company has that a competitor can't copy in a year."}]},
+    {"key": "insight", "label": "Insight", "about": "A non-obvious read on the market, technology or customer; why now.",
+     "tests": [{"key": "nonobvious", "question": "Does the speaker offer a non-obvious insight about the market, technology or customers, beyond what a news summary would say?", "weak": "Headline-level insight", "probe": "Ask what they believe about this market that most people don't."}]},
+    {"key": "tradeoffs", "label": "Trade-offs and risks", "about": "What is given up, how competitors respond, what could go wrong.",
+     "tests": [
+      {"key": "cost", "question": "Does the speaker name what the strategy gives up and how competitors are likely to respond?", "weak": "No cost or response", "probe": "Ask how the strongest competitor responds in the first 90 days."},
+      {"key": "reassess", "question": "Does the speaker say what would make them change the plan (what has to be true, a signal to watch)?", "weak": "No signal to reassess", "probe": "Ask what they'd need to see in six months to abandon this."}
+     ]},
+    {"key": "sequence", "label": "Sequencing", "about": "What comes now, next, later.",
+     "tests": [{"key": "order", "question": "Does the speaker sequence the plan (now, next, later) with a reason for the order?", "weak": "No sequencing", "probe": "Ask what they'd do in the first quarter, and what they'd deliberately leave for later."}]}
+  ]
+}

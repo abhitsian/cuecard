@@ -1,0 +1,25 @@
+{
+  "id": "taste",
+  "name": "Taste",
+  "summary": "Taste per Shreyas Doshi: recognising what is really good before results prove it, and explaining why in terms of the user's motivation and the brand, independent of social or authority proof. Harsh grading is not taste.",
+  "modes": ["interviewing"],
+  "nodes": [
+    {"key": "pick", "label": "Unproven pick", "about": "Naming something good that isn't yet widely recognised, or a detail in a product that shows care.",
+     "tests": [
+      {"key": "unproven", "question": "Does the speaker praise something whose quality isn't already proven by success (not Apple, Stripe or another obvious winner)?", "weak": "Praised a proven winner", "probe": "Ask for a product they think is great that most people haven't noticed yet."},
+      {"key": "detail", "question": "Does the speaker point to a specific, concrete detail rather than general praise?", "weak": "General praise, no detail", "probe": "Ask them to name the one detail that shows someone cared."}
+     ]},
+    {"key": "why", "label": "Why it works", "about": "Explaining why the thing is good: user motivation, anxiety, friction, brand.",
+     "tests": [
+      {"key": "mechanism", "question": "Does the speaker explain why it works in terms of the user's motivation, anxiety or friction, not just that it is nice?", "weak": "No mechanism for why it's good", "probe": "Ask what the user would feel if that detail were missing."},
+      {"key": "brand", "question": "Does the speaker connect the choice to what the product or brand is trying to be?", "weak": "Not tied to the product's intent", "probe": "Ask whether that detail would work in a competitor's product."}
+     ]},
+    {"key": "independent", "label": "Independent judgment", "about": "Judging an idea apart from its social proof, authority or catchy name.",
+     "tests": [
+      {"key": "own", "question": "Does the speaker hold a view that goes against popular opinion or a well-known authority, with a reason?", "weak": "Only repeats accepted views", "probe": "Ask for a widely held product belief they think is wrong."},
+      {"key": "fair", "question": "Does the speaker avoid dismissing everything, and credit what is good in something they criticise?", "weak": "Everything is bad", "probe": "Ask what the team that built it got right."}
+     ]},
+    {"key": "remove", "label": "What to remove", "about": "Critiquing a flow by what should be cut or simplified.",
+     "tests": [{"key": "cut", "question": "Does the speaker propose removing or simplifying something specific, with the reason the user is better off?", "weak": "Only adds features", "probe": "Ask what they'd remove from it first."}]}
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "id": "story",
+  "name": "Behavioural story",
+  "summary": "Anatomy of a real story, from the user's story bank and interviewing research: stakes with a baseline, the speaker's own decision, the trade-off, a named counterparty, the mechanism, the setback, the result, and a changed process as the lesson.",
+  "modes": ["interviewing", "oneOnOne"],
+  "nodes": [
+    {"key": "stakes", "label": "Stakes", "about": "The situation and why it mattered, with numbers.",
+     "tests": [
+      {"key": "baseline", "question": "Does the speaker give a number with its baseline, denominator or timeframe (e.g. 11 of 5,000 customers, from 40% to 55% over two quarters)?", "weak": "Numbers with no baseline", "probe": "Ask what the number was before, and over what period."}
+     ]},
+    {"key": "role", "label": "Own role", "about": "What the speaker personally decided or did, separate from the team and from decisions made above them.",
+     "tests": [
+      {"key": "i", "question": "Does the speaker attribute the key decisions (decided, chose, cut) to themselves with 'I', rather than only 'we'?", "weak": "\"We\" did the deciding", "probe": "Ask what they did that the team wouldn't have done without them."},
+      {"key": "boundary", "question": "Does the speaker distinguish what they owned from what was decided above or beside them?", "weak": "Ownership boundary unclear", "probe": "Ask which parts were their call and which were handed to them."}
+     ]},
+    {"key": "tradeoff", "label": "Trade-off", "about": "What was given up, cut or said no to.",
+     "tests": [
+      {"key": "cost", "question": "Does the speaker name something that was given up, cut, delayed or refused as a result of the decision?", "weak": "No cost to the decision", "probe": "Ask what didn't get done because of this."}
+     ]},
+    {"key": "counterparty", "label": "Counterparty", "about": "The people who disagreed or had to be won over, and their view.",
+     "tests": [
+      {"key": "named", "question": "Does the speaker name a specific person or role who disagreed and describe their position fairly, including where they were partly right?", "weak": "No real counterparty / villain-only", "probe": "Ask how that person would tell this story."}
+     ]},
+    {"key": "mechanism", "label": "Mechanism", "about": "How the actions produced the result: the steps, not the summary.",
+     "tests": [
+      {"key": "how", "question": "Does the speaker explain the concrete steps that caused the outcome, with at least one specific detail (an artifact, meeting, date or method)?", "weak": "Outcome with no mechanism", "probe": "Ask them to walk through the meeting where it was decided: who was there, what was said."}
+     ]},
+    {"key": "setback", "label": "Setback", "about": "What went wrong along the way, including the speaker's own mistakes.",
+     "tests": [
+      {"key": "dip", "question": "Does the story include a setback, wrong turn or mistake the speaker owns, rather than a straight-up arc?", "weak": "All-positive arc", "probe": "Ask what went wrong that they haven't mentioned yet."}
+     ]},
+    {"key": "result", "label": "Result", "about": "The outcome and what happened after.",
+     "tests": [
+      {"key": "measured", "question": "Does the speaker state the result with a number or observable change, or honestly say the number isn't known yet?", "weak": "Result vague or unmeasured", "probe": "Ask what the number is today and how it was counted."},
+      {"key": "after", "question": "Does the speaker describe a second-order effect or what happened afterwards?", "weak": "Story stops at a convenient place", "probe": "Ask what happened after that, and whether it's still in place."}
+     ]},
+    {"key": "lesson", "label": "Lesson", "about": "What the speaker would do differently.",
+     "tests": [
+      {"key": "mechanism", "question": "Is the lesson a concrete change in how they work (a process, a check, a rule), rather than a generic value like 'communication is key'?", "weak": "Generic lesson", "probe": "Ask what they'd change on day one if they ran it again."}
+     ]}
+  ]
+}

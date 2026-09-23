@@ -1,0 +1,28 @@
+{
+  "id": "review",
+  "name": "Product review",
+  "summary": "Reviewing a spec, design or plan someone presents, from Lenny Council operators: the point in one sentence (Maggie Crowley), what the customer can do and do next (Butterfield), why it's better for the customer (Jag Duggal), the outcome and how it's instrumented (Melissa Perri), what makes it hard (Rumelt), and a pre-mortem with kill criteria (Shreyas Doshi, Annie Duke).",
+  "modes": ["review", "decision", "general"],
+  "nodes": [
+    {"key": "point", "label": "The point", "about": "What the presenter is trying to say or propose, in plain words.",
+     "tests": [{"key": "clear", "question": "Does the presenter state the proposal or its main point plainly, in a sentence or two?", "weak": "The point is buried", "probe": "Ask what they're trying to say, in one sentence (Maggie Crowley's question)."}]},
+    {"key": "problem", "label": "Problem", "about": "The customer or business problem, separate from the solution.",
+     "tests": [{"key": "stated", "question": "Does the presenter describe the problem separately from the solution, grounded in a specific customer or data point?", "weak": "No problem, only a solution", "probe": "Ask what a customer does today when they hit this."}]},
+    {"key": "customer", "label": "Customer value", "about": "Why this is better or different for the customer; what they understand and do next.",
+     "tests": [
+      {"key": "better", "question": "Does the presenter explain why this is meaningfully better for the customer, not just new?", "weak": "Better for us, not the customer", "probe": "Ask why this is great for the customer, and what's different for them."},
+      {"key": "comprehension", "question": "Would a first-time user know what this is and what to do next, based on what was described?", "weak": "Unclear what the user does next", "probe": "Ask what a new user thinks this is and what they do next."}
+     ]},
+    {"key": "outcome", "label": "Outcome", "about": "What should happen after release, which metric moves, how it's instrumented.",
+     "tests": [{"key": "instrumented", "question": "Does the presenter name the metric that should move and how they'll measure it?", "weak": "No expected outcome", "probe": "Ask what they hope happens after release and how they'll know."}]},
+    {"key": "hard", "label": "What makes it hard", "about": "The crux: the hardest part, constraints, dependencies.",
+     "tests": [{"key": "crux", "question": "Does the presenter name the hardest part of the problem or the main constraint, rather than presenting it as straightforward?", "weak": "Crux not named", "probe": "Ask what makes this hard (Rumelt's question)."}]},
+    {"key": "risks", "label": "Risks and kill criteria", "about": "What could make it fail, and the signal that would stop or change it.",
+     "tests": [
+      {"key": "premortem", "question": "Does the presenter name specific ways this could fail?", "weak": "No failure modes", "probe": "Ask them to imagine it failed six months from now and say what went wrong."},
+      {"key": "kill", "question": "Does the presenter say what result would make them stop or change course?", "weak": "No kill criteria", "probe": "Ask what number would make them pull it."}
+     ]},
+    {"key": "tradeoff", "label": "Trade-offs", "about": "What is being given up or not done.",
+     "tests": [{"key": "cost", "question": "Does the presenter say what is being sacrificed or deprioritised to do this?", "weak": "No trade-off named", "probe": "Ask what they're willing to give up to do this well."}]}
+  ]
+}

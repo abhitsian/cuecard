@@ -1,0 +1,22 @@
+{
+  "id": "creativity",
+  "name": "Creativity",
+  "summary": "Creative execution per Shreyas Doshi: solving problems in uncommon and more correct ways. Diverge with structurally different options, defer judgement, then converge with a reason.",
+  "modes": ["interviewing"],
+  "nodes": [
+    {"key": "diverge", "label": "Range of options", "about": "Generating many options before choosing.",
+     "tests": [
+      {"key": "different", "question": "Are the speaker's options structurally different from each other (remove it, reverse it, bundle or unbundle, change the constraint, make it unnecessary), not variants of one idea?", "weak": "Variants of one idea", "probe": "Ask for an option that makes the whole feature unnecessary."},
+      {"key": "defer", "question": "Does the speaker generate several options before evaluating any of them?", "weak": "Judged the first idea immediately", "probe": "Ask for three more before picking."}
+     ]},
+    {"key": "uncommon", "label": "Uncommon", "about": "An option a competitor wouldn't think of.",
+     "tests": [{"key": "novel", "question": "Does at least one option reframe the problem or address an unexpressed need, rather than the obvious feature?", "weak": "Only obvious options", "probe": "Ask which option a competitor would never come up with."}]},
+    {"key": "correct", "label": "More correct", "about": "Why the unusual option actually works better.",
+     "tests": [{"key": "why", "question": "Does the speaker explain why their unusual option would work better for the user or business, not just that it is novel?", "weak": "Novel but not better", "probe": "Ask why that option is more right, not just more different."}]},
+    {"key": "converge", "label": "Converge", "about": "Choosing, combining, and committing with a reason.",
+     "tests": [
+      {"key": "choose", "question": "Does the speaker pick an option (or combine two) with a stated reason?", "weak": "Never converged", "probe": "Ask which one they'd build first, and why."},
+      {"key": "update", "question": "When given new information or a hint, does the speaker incorporate it and change course if needed?", "weak": "Didn't update on new information", "probe": "Offer a new constraint and ask what changes."}
+     ]}
+  ]
+}

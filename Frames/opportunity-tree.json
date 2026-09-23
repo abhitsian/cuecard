@@ -1,0 +1,32 @@
+{
+  "id": "opportunity-tree",
+  "name": "Problem to solution",
+  "summary": "Opportunity solution tree (Teresa Torres): outcome, opportunities grounded in evidence, solutions, and the assumptions to test. For anyone presenting a problem or a proposal.",
+  "modes": ["general", "decision", "customer", "interviewing", "review"],
+  "nodes": [
+    {"key": "outcome", "label": "Outcome", "about": "The measurable outcome the work is meant to move.",
+     "tests": [
+      {"key": "measurable", "question": "Does the speaker name a measurable outcome (a metric or behaviour change) the work should move?", "weak": "No outcome, only output", "probe": "Ask what number moves if this works, and by when."},
+      {"key": "owned", "question": "Is the outcome something this team can influence, rather than a lagging business number far from the work?", "weak": "Outcome too far from the work", "probe": "Ask which behaviour change leads to that number."}
+     ]},
+    {"key": "opportunity", "label": "Opportunity", "about": "The customer need, pain or desire behind the proposal.",
+     "tests": [
+      {"key": "stated", "question": "Does the speaker describe the customer need or pain, separately from the solution?", "weak": "Solution with no stated need", "probe": "Ask what the customer does today without this."},
+      {"key": "evidence", "question": "Is the need grounded in evidence from a specific customer, instance or data point, rather than assumption?", "weak": "Need not grounded in evidence", "probe": "Ask for the last time a customer ran into this, and what happened."},
+      {"key": "size", "question": "Does the speaker give a sense of how many users have this need or how often?", "weak": "Size of need unknown", "probe": "Ask how many customers hit this in the last month."}
+     ]},
+    {"key": "alternatives", "label": "Alternatives", "about": "Other solutions or opportunities considered.",
+     "tests": [
+      {"key": "compared", "question": "Does the speaker mention other solutions or other opportunities they considered, and why this one wins?", "weak": "One option, no comparison", "probe": "Ask what else they looked at and what ruled it out."}
+     ]},
+    {"key": "solution", "label": "Solution", "about": "The proposed solution and how it addresses the need.",
+     "tests": [
+      {"key": "mechanism", "question": "Does the speaker explain how the solution changes the customer's behaviour or outcome (the mechanism), not just what it is?", "weak": "What, not how it works", "probe": "Ask them to walk through the moment a customer uses it and what changes."}
+     ]},
+    {"key": "assumptions", "label": "Assumptions", "about": "What has to be true for the solution to work, and how it will be tested.",
+     "tests": [
+      {"key": "named", "question": "Does the speaker name what has to be true for this to work (desirability, viability, feasibility, usability)?", "weak": "Assumptions unstated", "probe": "Ask what would have to be true for this to fail."},
+      {"key": "test", "question": "Does the speaker describe a cheap way to test the riskiest assumption before building fully?", "weak": "No test before building", "probe": "Ask how they could find out in two weeks whether the riskiest part holds."}
+     ]}
+  ]
+}

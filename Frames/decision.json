@@ -1,0 +1,23 @@
+{
+  "id": "decision",
+  "name": "Decision",
+  "summary": "Getting to a real decision, from Lenny Council operators: the decision named, options and the criteria between them, disagreement surfaced rather than assumed alignment (Annie Duke, Tomer Cohen), reversibility and magnitude (Gibson Biddle, Shreyas Doshi), an owner and date, and a genuine yes rather than a lukewarm one (Kenneth Berger).",
+  "modes": ["decision", "general", "review"],
+  "nodes": [
+    {"key": "decision", "label": "Decision named", "about": "What exactly is being decided.",
+     "tests": [{"key": "named", "question": "Has someone stated exactly what is being decided, as a choice between options?", "weak": "Decision never named", "probe": "Ask what exactly we're deciding today."}]},
+    {"key": "options", "label": "Options and criteria", "about": "The options on the table and the criteria for choosing.",
+     "tests": [
+      {"key": "options", "question": "Have at least two real options been discussed?", "weak": "Only one option on the table", "probe": "Ask what the strongest alternative is."},
+      {"key": "criteria", "question": "Has the group stated the criteria that decide between the options?", "weak": "No stated criteria", "probe": "Ask what would make one option clearly better than the other."}
+     ]},
+    {"key": "dissent", "label": "Disagreement", "about": "Whether disagreement has been surfaced and understood.",
+     "tests": [{"key": "surfaced", "question": "Has a disagreement or concern been stated openly and restated fairly by the other side, rather than assumed alignment?", "weak": "Agreement too fast", "probe": "Ask the quietest person what worries them about it."}]},
+    {"key": "reversible", "label": "Reversibility", "about": "Magnitude and whether the decision can be undone.",
+     "tests": [{"key": "door", "question": "Has anyone discussed how big the decision is and whether it can be reversed?", "weak": "Reversibility not discussed", "probe": "Ask how hard this would be to undo in three months."}]},
+    {"key": "owner", "label": "Owner and date", "about": "Who owns it and by when.",
+     "tests": [{"key": "owner", "question": "Has a specific owner and a date or next checkpoint been named?", "weak": "No owner or date", "probe": "Ask who owns this and when we'll check it."}]},
+    {"key": "commit", "label": "Real commitment", "about": "Whether people are genuinely committed or lukewarm.",
+     "tests": [{"key": "yes", "question": "Do the people who must deliver express a clear yes, rather than a hedged 'yeah, maybe' or 'should be fine'?", "weak": "Lukewarm yes", "probe": "Ask what would make it a clear yes for them."}]}
+  ]
+}

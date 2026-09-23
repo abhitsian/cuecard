@@ -1,0 +1,21 @@
+{
+  "id": "leadership",
+  "name": "Product leadership",
+  "summary": "GPM, Director and VP signals from Aakash Gupta's leadership guides and Shreyas Doshi on high agency: track record at the right scale, aperture, impact beyond product, people decisions, and owning outcomes without blaming circumstances.",
+  "modes": ["interviewing"],
+  "nodes": [
+    {"key": "scale", "label": "Scale and level", "about": "Stories at the size of the role: org size, multiple planning cycles, cross-functional scope.",
+     "tests": [{"key": "level", "question": "Is the story at the scale of the role being hired for (team size, multi-quarter horizon, cross-functional scope), rather than individual-contributor work?", "weak": "Story below the level", "probe": "Ask how big the team was and how many planning cycles this spanned."}]},
+    {"key": "people", "label": "People decisions", "about": "Hiring, developing, and exiting people.",
+     "tests": [
+      {"key": "hard", "question": "Does the speaker describe a hard people decision they made themselves (letting someone go, a difficult promotion call, reorganising) with the reasoning?", "weak": "No hard people calls", "probe": "Ask about the last time they had to let someone go."},
+      {"key": "develop", "question": "Does the speaker describe someone they hired or developed and what that person went on to do?", "weak": "No evidence of developing people", "probe": "Ask about their best hire and what that person does now."}
+     ]},
+    {"key": "agency", "label": "Agency", "about": "Getting results without waiting for perfect conditions or blaming circumstances.",
+     "tests": [{"key": "own", "question": "Does the speaker take ownership of obstacles rather than attributing results to resources, leadership, timing or other teams?", "weak": "Blames circumstances", "probe": "Ask what they did when the resources they needed never came."}]},
+    {"key": "beyond", "label": "Beyond product", "about": "Impact on engineering, design, go-to-market, support and ops.",
+     "tests": [{"key": "cross", "question": "Does the speaker describe impact on functions beyond product (engineering practices, design quality, go-to-market, operations)?", "weak": "Product-only impact", "probe": "Ask what changed in sales or support because of their work."}]},
+    {"key": "upward", "label": "Managing up", "about": "Saying no to executives, framing, disagreement.",
+     "tests": [{"key": "no", "question": "Does the speaker describe disagreeing with or saying no to a senior leader, and how it resolved?", "weak": "Never pushed back upward", "probe": "Ask about the last time they told the CEO or their boss no."}]}
+  ]
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key><string>Cuecard</string>
+	<key>CFBundleIconFile</key><string>Cuecard</string>
+	<key>CFBundleIdentifier</key><string>com.vaibhav.cuecard</string>
+	<key>CFBundleName</key><string>Cuecard</string>
+	<key>CFBundleDisplayName</key><string>Cuecard</string>
+	<key>CFBundlePackageType</key><string>APPL</string>
+	<key>CFBundleShortVersionString</key><string>0.1</string>
+	<key>CFBundleVersion</key><string>1</string>
+	<key>LSMinimumSystemVersion</key><string>26.0</string>
+	<key>LSUIElement</key><true/>
+	<key>NSMicrophoneUsageDescription</key><string>Cuecard transcribes what you say in meetings, on this Mac.</string>
+	<key>NSAudioCaptureUsageDescription</key><string>Cuecard listens to the other side of your calls so it can suggest questions and take notes.</string>
+	<key>NSSpeechRecognitionUsageDescription</key><string>Cuecard turns meeting audio into text on this Mac.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key><string>Cuecard reads the meeting happening now (title, people, invite notes) to give better suggestions.</string>
+</dict>
+</plist>

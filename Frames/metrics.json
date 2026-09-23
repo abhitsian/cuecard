@@ -1,0 +1,24 @@
+{
+  "id": "metrics",
+  "name": "Metrics",
+  "summary": "Success metrics and metric diagnosis answers: goal, north star, decomposition, guardrails, diagnosis of a change.",
+  "modes": ["interviewing", "review", "decision"],
+  "nodes": [
+    {"key": "goal", "label": "Goal", "about": "The product or business goal the metrics serve.",
+     "tests": [{"key": "stated", "question": "Does the speaker state the product goal before naming metrics?", "weak": "Metrics before goal", "probe": "Ask what the product is for, in one sentence, before the numbers."}]},
+    {"key": "north", "label": "Primary metric", "about": "The single primary or north-star metric and its definition.",
+     "tests": [
+      {"key": "defined", "question": "Does the speaker define the primary metric precisely (numerator, denominator, time window)?", "weak": "Metric not defined", "probe": "Ask exactly how it's counted: who's in the denominator, over what window."},
+      {"key": "value", "question": "Does the primary metric reflect value delivered to users rather than vanity activity?", "weak": "Vanity metric", "probe": "Ask how this number could go up while users get worse off."}
+     ]},
+    {"key": "inputs", "label": "Decomposition", "about": "Breaking the metric into input metrics, segments or funnel steps.",
+     "tests": [{"key": "mece", "question": "Does the speaker break the metric into distinct input metrics, segments or funnel steps?", "weak": "No decomposition", "probe": "Ask which part of the funnel they'd look at first, and why."}]},
+    {"key": "guardrails", "label": "Guardrails", "about": "Counter-metrics that catch harm or gaming.",
+     "tests": [{"key": "named", "question": "Does the speaker name at least one guardrail or counter-metric that would catch harm or gaming?", "weak": "No guardrails", "probe": "Ask what number would make them roll it back even if the main metric went up."}]},
+    {"key": "diagnosis", "label": "Diagnosis", "about": "Explaining a metric change: internal vs external causes, segmenting, hypotheses.",
+     "tests": [
+      {"key": "hypotheses", "question": "Does the speaker consider several causes (data/instrumentation, internal change, external factor, segment shift) before concluding?", "weak": "Jumped to one cause", "probe": "Ask how they'd rule out a tracking bug first."},
+      {"key": "segment", "question": "Does the speaker segment the change (platform, region, cohort, new vs existing) to locate it?", "weak": "Didn't localise the change", "probe": "Ask where exactly the drop is concentrated."}
+     ]}
+  ]
+}

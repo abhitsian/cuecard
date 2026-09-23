@@ -1,0 +1,7 @@
+{
+  "name": "Cuecard",
+  "type": "static",
+  "entry": "build/Cuecard.app",
+  "install": "./build.sh",
+  "description": "Menu-bar meeting copilot: live on-device transcript, Jev sorts every turn into actions/decisions/open questions/signals, Claude suggests what to say and ask in real time"
+}
