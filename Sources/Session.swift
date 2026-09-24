@@ -50,6 +50,11 @@ final class Session: ObservableObject {
     /// Meetings whose recap is still being written. It happens in the background, so the next meeting can start.
     @Published private(set) var writingUp = 0
     private var micFreeSince: Date?
+    /// The stall check: buffer and result counts at the last look, and when each side was last restarted.
+    private var lastCheck = Date()
+    private var lastHealthLog = Date()
+    private var seen: [Speaker: (buffers: Int, results: Int)] = [:]
+    private var lastRestart: [Speaker: Date] = [:]
 
     /// Asks the app to show the panel (a SAY card arrived, or the user started).
     var onShowPanel: (() -> Void)?
@@ -278,9 +283,44 @@ final class Session: ObservableObject {
             let silent = m.hearsThem && running > 25 && !(them?.heardAnything ?? true) && (you?.heardAnything ?? false)
             if m.themSilent != silent { m.themSilent = silent }
             if Date().timeIntervalSince(lastSave) > 30 { lastSave = Date(); Archive.write(m) }
+            checkHealth(m)
             autoStopCheck(m)
         }
         onChange?()
+    }
+
+    /// Every 20 s: a side with no new audio gets its audio source restarted; a side that is hearing sound but has
+    /// returned no text for 45 s gets its recognizer restarted (both recognizers share the system speech
+    /// service, which can stall). A health line goes to the log every minute.
+    private func checkHealth(_ m: Meeting) {
+        let now = Date()
+        guard now.timeIntervalSince(lastCheck) >= 20 else { return }
+        lastCheck = now
+        var report: [String] = []
+        for (speaker, t) in [(Speaker.you, you), (Speaker.them, them)] {
+            guard let t else { continue }
+            let before = seen[speaker] ?? (0, 0)
+            let newBuffers = t.buffers - before.buffers, newResults = t.results - before.results
+            seen[speaker] = (t.buffers, t.results)
+            report.append("\(speaker.rawValue) buffers+\(newBuffers) results+\(newResults) loud \(Int(now.timeIntervalSince(t.lastLoud)))s ago text \(Int(now.timeIntervalSince(t.lastResult)))s ago")
+            guard m.phase == .listening, speaker == .you || m.hearsThem,
+                  now.timeIntervalSince(lastRestart[speaker] ?? .distantPast) > 60 else { continue }
+            if newBuffers == 0, before.buffers > 0 {
+                Log.write("health \(speaker.rawValue): no audio for 20s, restarting the source")
+                lastRestart[speaker] = now
+                if speaker == .you { mic?.restart() } else if let tap { tap.stop(); try? tap.start() }
+                m.notice = "Lost \(speaker == .you ? "your microphone" : "the other side's audio") for a moment; reconnected."
+            } else if now.timeIntervalSince(t.lastLoud) < 15, now.timeIntervalSince(t.lastResult) > 45 {
+                Log.write("health \(speaker.rawValue): sound but no text for \(Int(now.timeIntervalSince(t.lastResult)))s, restarting speech")
+                lastRestart[speaker] = now
+                Task { await t.restart() }
+                m.notice = "Speech for \(speaker == .you ? "you" : "the other side") stalled; restarted it."
+            }
+        }
+        if now.timeIntervalSince(lastHealthLog) >= 60 {
+            lastHealthLog = now
+            Log.write("health: " + report.joined(separator: " | "))
+        }
     }
 
     /// When the call app that was on the mic lets go of it for a minute and nobody is talking, wrap up.

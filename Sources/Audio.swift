@@ -39,6 +39,13 @@ final class MicSource {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
     }
+
+    /// Starts over with a fresh engine, for when buffers stop arriving.
+    func restart() {
+        stop()
+        engine = AVAudioEngine()
+        do { try install() } catch { Log.write("mic: restart failed \(error)") }
+    }
 }
 
 /// Everything the Mac plays (the other side of a call), through a Core Audio process tap. Audio-only

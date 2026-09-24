@@ -14,6 +14,15 @@ final class Transcriber {
     /// Most recent loudness, 0...1.
     private(set) var level: Float = 0
     private(set) var heardAnything = false
+    /// Health, for the stall check and the log: buffers in, results out, when each last happened.
+    private(set) var buffers = 0
+    private(set) var results = 0
+    private(set) var lastLoud = Date.distantPast
+    private(set) var lastResult = Date()
+    private var locale: Locale?
+    private var vocabulary: [String] = []
+    /// Guards the analyzer input: the audio thread appends while a restart swaps it.
+    private let feed = NSLock()
 
     private var analyzer: SpeechAnalyzer?
     private var continuation: AsyncStream<AnalyzerInput>.Continuation?
@@ -51,6 +60,9 @@ final class Transcriber {
     }
 
     func start(locale: Locale, vocabulary: [String]) async throws {
+        self.locale = locale
+        self.vocabulary = vocabulary
+        lastResult = Date()
         let transcriber = Transcriber.module(locale)
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
@@ -60,11 +72,12 @@ final class Transcriber {
             do { try await analyzer.setContext(context) } catch { Log.write("speech context: \(error)") }
         }
         let (stream, continuation) = AsyncStream<AnalyzerInput>.makeStream()
-        self.continuation = continuation
         let speaker = self.speaker
         resultsTask = Task { [weak self] in
             do {
                 for try await result in transcriber.results {
+                    self?.results += 1
+                    self?.lastResult = Date()
                     let text = String(result.text.characters).trimmingCharacters(in: .whitespacesAndNewlines)
                     let final = result.isFinal
                     DispatchQueue.main.async {
@@ -79,9 +92,15 @@ final class Transcriber {
             } catch {
                 Log.write("speech \(speaker.rawValue): \(error)")
             }
+            Log.write("speech \(speaker.rawValue): results ended")
         }
         try await analyzer.start(inputSequence: stream)
         self.analyzer = analyzer
+        feed.lock()
+        self.continuation = continuation
+        converter = nil
+        inputFormat = nil
+        feed.unlock()
         Log.write("speech \(speaker.rawValue): started \(locale.identifier) format=\(format.map { "\($0.sampleRate)" } ?? "?")")
     }
 
@@ -89,7 +108,9 @@ final class Transcriber {
     func append(_ buffer: AVAudioPCMBuffer) {
         let peak = peakLevel(buffer)
         level = max(peak, level * 0.85)
-        if peak > 0.02 { heardAnything = true }
+        buffers += 1
+        if peak > 0.02 { heardAnything = true; lastLoud = Date() }
+        feed.lock(); defer { feed.unlock() }
         guard !paused, let format, let continuation else { return }
         if inputFormat != buffer.format {
             converter = AVAudioConverter(from: buffer.format, to: format)
@@ -110,6 +131,21 @@ final class Transcriber {
     }
 
     func decay() { level *= 0.6 }
+
+    /// Replaces a stalled analyzer with a new one; audio keeps coming into this object throughout.
+    func restart() async {
+        guard let locale else { return }
+        feed.lock()
+        let old = continuation
+        continuation = nil
+        feed.unlock()
+        old?.finish()
+        resultsTask?.cancel()
+        let stale = analyzer
+        analyzer = nil
+        Task { await stale?.cancelAndFinishNow() }
+        do { try await start(locale: locale, vocabulary: vocabulary) } catch { Log.write("speech \(speaker.rawValue): restart failed \(error)") }
+    }
 
     func finish() async {
         continuation?.finish()
