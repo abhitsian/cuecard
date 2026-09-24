@@ -20,6 +20,9 @@ final class Session: ObservableObject {
         var calendarTitle: String?
         var bank: [BankQuestion] = []
         var preparing = false
+        /// Looking in Notion, and what came of the last look.
+        var fetchingNotion = false
+        var notionNote: String?
         /// Answer structures to grade live (frame ids).
         var frames: [String] = Frame.defaults(for: Prefs.shared.lastMode)
     }
@@ -98,6 +101,44 @@ final class Session: ObservableObject {
         }
     }
 
+    /// Adds what Notion knows about this meeting to the context box, so the question bank can use it.
+    func pullFromNotion() {
+        guard !prep.fetchingNotion else { return }
+        prep.fetchingNotion = true
+        prep.notionNote = nil
+        let p = prep
+        Task { @MainActor in
+            let title = p.title.isEmpty ? (p.calendarTitle ?? "Meeting") : p.title
+            let found = await NotionContext.fetch(title: title, attendees: p.attendees, goal: p.goal, mode: p.mode)
+            self.prep.fetchingNotion = false
+            guard let found else { self.prep.notionNote = "Nothing relevant found in Notion."; return }
+            self.prep.context = self.prep.context.replacingOccurrences(of: NotionContext.marker, with: "[Notion, earlier]")
+            self.prep.context += (self.prep.context.isEmpty ? "" : "\n\n") + found
+            self.prep.notionNote = "Added from Notion. Prepare writes questions from it."
+        }
+    }
+
+    /// At the start: if prep didn't pull Notion context, fetch it in the background, add it to the meeting's
+    /// context (every live suggestion reads it) and write a few questions from it into the bank.
+    private func notionAtStart(_ m: Meeting) {
+        guard Prefs.shared.notionContext, !m.context.contains(NotionContext.marker) else { return }
+        Task { @MainActor in
+            guard let found = await NotionContext.fetch(title: m.title, attendees: m.attendees, goal: m.goal, mode: m.mode),
+                  m.live else { return }
+            m.context += (m.context.isEmpty ? "" : "\n\n") + found
+            m.notice = "Added context from Notion. Questions from it are under Questions."
+            DispatchQueue.main.asyncAfter(deadline: .now() + 8) { if m.notice?.hasPrefix("Added context from Notion") == true { m.notice = nil } }
+            var added = 0
+            await Brain.writeBank(mode: m.mode, title: m.title, goal: m.goal, context: found, attendees: m.attendees) { q in
+                guard added < 5, !m.bank.contains(where: { $0.text == q.text }) else { return }
+                var q = q
+                q.topic = "Notion · " + q.topic
+                m.bank.append(q)
+                added += 1
+            }
+        }
+    }
+
     /// Adds a document (PDF, Word, text) to the context box.
     func addFile() {
         let panel = NSOpenPanel()
@@ -148,6 +189,7 @@ final class Session: ObservableObject {
             NSSound(named: "Tink")?.play()
         }
         self.brain = brain
+        notionAtStart(m)
         onShowPanel?()
         onChange?()
         Log.write("session: start mode=\(m.mode.rawValue) jev=\(brain.usesJev) model=\(prefs.model.short)")
@@ -295,6 +337,7 @@ final class Session: ObservableObject {
             await brain?.writeRecap()
             m.phase = .done
             Archive.write(m)
+            if let file = m.file { AfterWriteUp.run(file.path) }
             self.writingUp -= 1
             if self.meeting?.live != true, self.writingUp == 0 { Claude.shared.coolDown() }
             self.recent = Archive.recent()

@@ -38,6 +38,8 @@ final class Prefs: ObservableObject {
     @Published var detectMeetings: Bool { didSet { store.set(detectMeetings, forKey: "detectMeetings") } }
     @Published var hideFromSharing: Bool { didSet { store.set(hideFromSharing, forKey: "hideFromSharing") } }
     @Published var useCalendar: Bool { didSet { store.set(useCalendar, forKey: "useCalendar") } }
+    /// Pull context from Notion (through the Claude Code Notion connector) when a meeting starts.
+    @Published var notionContext: Bool { didSet { store.set(notionContext, forKey: "notionContext") } }
     @Published var useJev: Bool { didSet { store.set(useJev, forKey: "useJev") } }
     @Published var popOnAsk: Bool { didSet { store.set(popOnAsk, forKey: "popOnAsk") } }
 
@@ -51,6 +53,7 @@ final class Prefs: ObservableObject {
         detectMeetings = store.object(forKey: "detectMeetings") as? Bool ?? true
         hideFromSharing = store.object(forKey: "hideFromSharing") as? Bool ?? true
         useCalendar = store.object(forKey: "useCalendar") as? Bool ?? true
+        notionContext = store.object(forKey: "notionContext") as? Bool ?? true
         useJev = store.object(forKey: "useJev") as? Bool ?? true
         popOnAsk = store.object(forKey: "popOnAsk") as? Bool ?? true
     }

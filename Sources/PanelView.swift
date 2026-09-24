@@ -876,11 +876,16 @@ struct PrepScreen: View {
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.hairline))
                     HStack {
                         Button { session.addFile() } label: { Label("Add a file", systemImage: "paperclip") }.buttonStyle(SmallButtonStyle())
-                        Text("PDF, Word, text").font(.system(size: 10.5)).foregroundStyle(Theme.faint)
+                        Button { session.pullFromNotion() } label: {
+                            Label(session.prep.fetchingNotion ? "Looking in Notion…" : "From Notion", systemImage: "book.closed")
+                        }.buttonStyle(SmallButtonStyle()).disabled(session.prep.fetchingNotion)
                         Spacer()
                         if !session.prep.context.isEmpty {
                             Text("\(session.prep.context.split(separator: " ").count) words").font(.system(size: 10.5)).foregroundStyle(Theme.faint)
                         }
+                    }
+                    if let note = session.prep.notionNote {
+                        Text(note).font(.system(size: 10.5)).foregroundStyle(Theme.faint)
                     }
                 }
 
