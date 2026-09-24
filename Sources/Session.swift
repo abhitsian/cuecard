@@ -44,6 +44,8 @@ final class Session: ObservableObject {
     private var clock: Timer?
     private var lastSave = Date()
     private var startedWithApp: String?
+    /// Meetings whose recap is still being written. It happens in the background, so the next meeting can start.
+    @Published private(set) var writingUp = 0
     private var micFreeSince: Date?
 
     /// Asks the app to show the panel (a SAY card arrived, or the user started).
@@ -124,7 +126,9 @@ final class Session: ObservableObject {
     func toggle() { meeting?.live == true ? stop() : start() }
 
     func start() {
-        guard meeting == nil || meeting?.phase == .done else { return }
+        guard meeting?.live != true else { return }
+        // The last meeting may still be writing up; it finishes on its own. Start from a clean prep.
+        if meeting != nil { reset() }
         let prefs = Prefs.shared
         prefs.lastMode = prep.mode
         prefs.saveContext(prep.context, for: prep.mode)
@@ -273,22 +277,32 @@ final class Session: ObservableObject {
         startedWithApp = nil
         micFreeSince = nil
         onChange?()
-        let you = self.you, them = self.them
+        let you = self.you, them = self.them, brain = self.brain
         self.you = nil
         self.them = nil
+        clock?.invalidate()
+        clock = nil
+        writingUp += 1
+        // Everything below uses this meeting's own objects, so a new meeting can start while it runs.
         Task { @MainActor in
             await you?.finish()
             await them?.finish()
             Archive.write(m)
-            self.tab = .recap
-            self.mini = false
-            await self.brain?.writeRecap()
+            if self.meeting === m {
+                self.tab = .recap
+                self.mini = false
+            }
+            await brain?.writeRecap()
             m.phase = .done
-            self.mini = false
             Archive.write(m)
-            Claude.shared.coolDown()
+            self.writingUp -= 1
+            if self.meeting?.live != true, self.writingUp == 0 { Claude.shared.coolDown() }
             self.recent = Archive.recent()
-            self.clock?.invalidate()
+            if self.meeting !== m {
+                let note = "Saved the recap for \(m.title)"
+                self.status = note
+                DispatchQueue.main.asyncAfter(deadline: .now() + 6) { if self.status == note { self.status = nil } }
+            }
             self.onChange?()
             Log.write("session: saved \(m.file?.lastPathComponent ?? "-")")
         }

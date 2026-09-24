@@ -56,7 +56,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if session.meeting?.live == true {
             session.stop()
         } else {
-            if session.meeting?.phase == .done { session.reset() }
             session.start()
         }
         panel.show()
@@ -109,7 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         session.detected = app
         guard let app, Prefs.shared.detectMeetings else { return }
         Log.write("detector: \(app) took the mic")
-        if session.meeting?.phase == .done { session.reset() }
+        if session.meeting != nil { session.reset() }
         session.refreshFromCalendar()
         panel.show()
         // The offer fades if it isn't taken.
@@ -131,7 +130,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             title = " " + (m?.elapsed ?? "")
         case .paused?: symbol = "pause.circle"; title = " Paused"
         case .wrapping?: symbol = "text.badge.checkmark"; title = " Writing up"
-        default: symbol = "text.bubble"
+        default:
+            // A finished meeting's recap still being written in the background.
+            if session.writingUp > 0 { symbol = "text.badge.checkmark"; title = " Writing up" } else { symbol = "text.bubble" }
         }
         let key = symbol + title
         guard key != lastIcon else { return }

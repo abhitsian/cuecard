@@ -57,7 +57,8 @@ struct Header: View {
                     }
                     IconButton(symbol: m.phase == .paused ? "play.fill" : "pause.fill", help: m.phase == .paused ? "Resume" : "Pause") { session.pause() }
                     IconButton(symbol: "stop.fill", help: "Stop and write up (⌃⌥A)", tint: Color(red: 1, green: 0.5, blue: 0.45)) { session.stop() }
-                } else if m.phase == .done {
+                } else {
+                    // Available while the recap is still being written: it finishes in the background.
                     Button("New") { session.reset() }.buttonStyle(SmallButtonStyle())
                 }
             } else {
