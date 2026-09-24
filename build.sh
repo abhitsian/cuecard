@@ -73,6 +73,7 @@ swiftc -O -swift-version 5 -target arm64-apple-macos26 \
 cp Info.plist "$BUNDLE/Contents/Info.plist"
 
 mkdir -p "$BUNDLE/Contents/Resources/Frames" && cp Frames/*.json "$BUNDLE/Contents/Resources/Frames/"
+cp Viewer/*.html "$BUNDLE/Contents/Resources/"
 printf 'APPL????' > "$BUNDLE/Contents/PkgInfo"
 sign "$BUNDLE"
 

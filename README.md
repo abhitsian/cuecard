@@ -40,6 +40,10 @@ Follow-up questions come from two places: the **question bank** Claude writes fr
 
 Permissions: Microphone, System Audio Recording (for the other side), Calendar (optional).
 
+## Meeting pages
+
+Every meeting gets a page at `~/Documents/Cuecard/pages/<note>.html`, built from its Markdown note: the recap, what was captured live, and the transcript with a You/Them filter and search. `~/Documents/Cuecard/index.html` lists them by day with a mode filter and search. Open it from the menu (Open meetings library, ⌘L), or Page on the panel once a recap is done. Pages for older notes are written on launch.
+
 ## Notion context
 
 With the Notion connector in your Claude Code login, Cuecard can read your Notion for the meeting you're in: open tasks, what was decided last time, background. **From Notion** on the prep screen puts it in the context box (so Prepare writes questions from it); if you skip that, it's fetched in the background when the meeting starts, added to the context every suggestion reads, and up to five questions from it land under Questions tagged "Notion". It only reads: every Notion write tool is blocked. Turn it off in the menu (Pull context from Notion at start). It takes a minute or two.

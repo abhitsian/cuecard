@@ -337,7 +337,10 @@ final class Session: ObservableObject {
             await brain?.writeRecap()
             m.phase = .done
             Archive.write(m)
-            if let file = m.file { AfterWriteUp.run(file.path) }
+            if let file = m.file {
+                DispatchQueue.global(qos: .utility).async { Pages.write(note: file); Pages.rebuild() }
+                AfterWriteUp.run(file.path)
+            }
             self.writingUp -= 1
             if self.meeting?.live != true, self.writingUp == 0 { Claude.shared.coolDown() }
             self.recent = Archive.recent()

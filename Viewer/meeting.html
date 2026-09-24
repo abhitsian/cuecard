@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuecard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: oklch(97.2% 0.011 75);
+  --paper-2: oklch(94.6% 0.016 72);
+  --card: oklch(99% 0.006 80);
+  --ink: oklch(23% 0.012 60);
+  --ink-2: oklch(40% 0.018 62);
+  --ink-3: oklch(56% 0.02 66);
+  --line: oklch(89% 0.018 72);
+  --amber: oklch(72% 0.15 70);
+  --amber-wash: oklch(93% 0.05 80);
+  --coral: oklch(62% 0.16 30);
+  --you: oklch(55% 0.12 250);
+  --them: oklch(52% 0.11 150);
+  --shadow: 0 1px 1px oklch(30% 0.03 60 / 0.06), 0 6px 18px -8px oklch(30% 0.04 60 / 0.22);
+  --ui: "Hanken Grotesk", ui-sans-serif, sans-serif;
+  --voice: "Newsreader", "Iowan Old Style", Georgia, serif;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: oklch(17.5% 0.01 60);
+    --paper-2: oklch(21.5% 0.012 62);
+    --card: oklch(20.5% 0.011 62);
+    --ink: oklch(93% 0.012 75);
+    --ink-2: oklch(78% 0.016 72);
+    --ink-3: oklch(62% 0.02 68);
+    --line: oklch(29% 0.014 62);
+    --amber: oklch(78% 0.14 75);
+    --amber-wash: oklch(30% 0.05 70);
+    --coral: oklch(72% 0.13 30);
+    --you: oklch(74% 0.1 250);
+    --them: oklch(74% 0.11 150);
+    --shadow: 0 1px 1px oklch(0% 0 0 / 0.3), 0 10px 30px -12px oklch(0% 0 0 / 0.6);
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 15px/1.55 var(--ui); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 6px; }
+.num { font-variant-numeric: tabular-nums; }
+
+.bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; min-height: 56px;
+  padding: 8px clamp(16px, 3vw, 40px); background: var(--paper); box-shadow: 0 1px 0 var(--line); }
+.brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 650; text-decoration: none; }
+.brand svg { width: 22px; height: 17px; color: var(--amber); }
+.bar .spacer { flex: 1; }
+.btn { height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); cursor: pointer;
+  font-size: 13.5px; font-weight: 550; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { border-color: var(--ink-3); }
+.btn.done { color: var(--them); }
+
+main { max-width: 1180px; margin: 0 auto; padding: clamp(24px, 3vw, 40px) clamp(16px, 3vw, 40px) 90px; }
+header.meta .eyebrow { margin: 0; color: var(--ink-3); font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+header.meta h1 { margin: 6px 0 10px; font-size: clamp(26px, 3vw, 36px); line-height: 1.12; font-weight: 650; letter-spacing: -0.02em; text-wrap: balance; }
+.people { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.people li { padding: 2px 9px; border-radius: 99px; background: var(--paper-2); font-size: 12.5px; color: var(--ink-2); }
+.goal { margin: 12px 0 0; font: italic 400 18px/1.4 var(--voice); color: var(--ink-2); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: clamp(24px, 3vw, 44px); margin-top: 28px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+.doc section { padding: 18px 0 20px; border-top: 1px solid var(--line); }
+.doc section:first-child { border-top: 0; padding-top: 0; }
+.doc h2 { margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
+  display: flex; align-items: center; gap: 8px; }
+.doc h2 .n { color: var(--ink-3); font-weight: 600; }
+.doc h2 .copy { margin-left: auto; text-transform: none; letter-spacing: 0; }
+.doc h3 { margin: 14px 0 6px; font-size: 15px; font-weight: 650; }
+.md p { margin: 6px 0; }
+.md ul { margin: 4px 0; padding-left: 20px; }
+.md li { margin: 5px 0; }
+.md li.task { list-style: none; margin-left: -20px; display: flex; gap: 9px; }
+.md li.task .box { flex: none; width: 16px; height: 16px; margin-top: 3px; border: 1.5px solid var(--ink-3); border-radius: 4px; }
+.md li.task.checked .box { background: var(--them); border-color: var(--them); }
+.md strong { font-weight: 650; }
+.md del { color: var(--ink-3); }
+.md code { font-size: 12.5px; padding: 1px 5px; border-radius: 5px; background: var(--paper-2); }
+.summary .md li { font-size: 16px; }
+.followup .md { padding: 14px 16px; border-radius: 12px; background: var(--amber-wash); font: 400 16.5px/1.5 var(--voice); }
+
+aside.side { position: sticky; top: 76px; display: grid; gap: 14px; }
+.panel { padding: 14px 16px; border-radius: 14px; background: var(--card); box-shadow: var(--shadow); }
+.panel h2 { margin: 0 0 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat b { display: block; font-size: 22px; font-weight: 650; }
+.stat span { font-size: 12px; color: var(--ink-3); }
+details { border-top: 1px solid var(--line); padding: 8px 0; }
+details:first-of-type { border-top: 0; }
+summary { cursor: pointer; font-weight: 600; font-size: 14px; list-style: none; display: flex; justify-content: space-between; }
+summary::-webkit-details-marker { display: none; }
+summary .n { color: var(--ink-3); font-weight: 500; }
+details .md { font-size: 13.5px; color: var(--ink-2); }
+
+.transcript { margin-top: 36px; }
+.transcript .head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.transcript h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.tfilter { display: inline-flex; padding: 3px; border-radius: 9px; background: var(--paper-2); }
+.tfilter button { height: 28px; padding: 0 11px; border: 0; border-radius: 7px; background: none; cursor: pointer; font-size: 13px; font-weight: 550; color: var(--ink-3); }
+.tfilter button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px oklch(30% 0.03 60 / 0.12); }
+.tsearch { margin-left: auto; width: min(260px, 100%); height: 34px; padding: 0 12px; border: 0; border-radius: 9px; background: var(--paper-2); }
+.lines { list-style: none; margin: 0; padding: 0; border-radius: 14px; background: var(--card); box-shadow: var(--shadow); overflow: hidden; }
+.lines li { display: grid; grid-template-columns: 52px 50px minmax(0, 1fr); gap: 10px; padding: 7px 16px; border-top: 1px solid var(--line); }
+.lines li:first-child { border-top: 0; }
+.lines time { color: var(--ink-3); font-size: 12.5px; padding-top: 2px; }
+.lines .who { font-size: 12.5px; font-weight: 700; padding-top: 2px; }
+.lines .you .who { color: var(--you); }
+.lines .them .who { color: var(--them); }
+.lines mark { background: var(--amber-wash); color: inherit; border-radius: 3px; }
+.empty { color: var(--ink-3); padding: 14px 16px; }
+@media (max-width: 560px) { .lines li { grid-template-columns: 44px minmax(0, 1fr); } .lines .who { grid-column: 2; } .lines .text { grid-column: 1 / -1; } }
+</style>
+</head>
+<body>
+<div class="bar">
+  <a class="brand" id="home" href="../index.html" aria-label="All meetings">
+    <svg viewBox="0 0 22 17" fill="none" aria-hidden="true"><rect x="1.2" y="1.8" width="19.6" height="13.4" rx="2.2" stroke="currentColor" stroke-width="1.6"/><rect x="1.2" y="4.6" width="19.6" height="1.3" fill="currentColor"/><rect x="4" y="8.2" width="13" height="2.4" rx="1.2" fill="currentColor"/><rect x="4" y="11.6" width="8" height="1.3" rx=".65" fill="currentColor"/></svg>
+    Cuecard
+  </a>
+  <span class="spacer"></span>
+  <a class="btn" id="note" href="#">Open note</a>
+  <button class="btn" id="copy" type="button">Copy for Claude</button>
+</div>
+<main>
+  <header class="meta">
+    <p class="eyebrow" id="eyebrow"></p>
+    <h1 id="title"></h1>
+    <ul class="people" id="people"></ul>
+    <p class="goal" id="goal" hidden></p>
+  </header>
+  <div class="layout">
+    <div class="doc" id="doc"></div>
+    <aside class="side" id="side"></aside>
+  </div>
+  <section class="transcript" id="transcript">
+    <div class="head">
+      <h2>Transcript <span class="num" id="tcount"></span></h2>
+      <div class="tfilter" role="group" aria-label="Speaker">
+        <button type="button" data-who="" aria-pressed="true">Everyone</button>
+        <button type="button" data-who="You" aria-pressed="false">You</button>
+        <button type="button" data-who="Them" aria-pressed="false">Them</button>
+      </div>
+      <input class="tsearch" id="tsearch" type="search" placeholder="Search what was said…" aria-label="Search the transcript">
+    </div>
+    <ol class="lines" id="lines"></ol>
+  </section>
+</main>
+
+<script id="data" type="application/json">__MEETING_JSON__</script>
+<script>
+(() => {
+  const data = JSON.parse(document.getElementById("data").textContent);
+  const md = data.markdown || "";
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/~~([^~]+)~~/g, "<del>$1</del>")
+    .replace(/(^|\s)\*([^*]+)\*/g, "$1<em>$2</em>");
+
+  // A small Markdown renderer: ### headings, bullets, task boxes, paragraphs.
+  const render = (text) => {
+    const box = el("div", "md");
+    let list = null;
+    for (const raw of text.split("\n")) {
+      const line = raw.replace(/\s+$/, "");
+      const bullet = line.match(/^\s*[-*] (.*)$/);
+      if (bullet) {
+        if (!list) { list = el("ul"); box.append(list); }
+        const li = el("li");
+        const task = bullet[1].match(/^\[( |x)\] (.*)$/);
+        if (task) {
+          li.className = "task" + (task[1] === "x" ? " checked" : "");
+          li.append(el("span", "box"));
+          const t = el("span"); t.innerHTML = inline(task[2]); li.append(t);
+        } else li.innerHTML = inline(bullet[1]);
+        list.append(li);
+        continue;
+      }
+      list = null;
+      if (!line.trim() || line.trim() === "---") continue;
+      const h = line.match(/^###+ (.*)$/);
+      if (h) { box.append(el("h3", null, h[1])); continue; }
+      const p = el("p"); p.innerHTML = inline(line); box.append(p);
+    }
+    return box;
+  };
+
+  // Split the note: header, recap sections, "Captured live", transcript.
+  const lines = md.split("\n");
+  const title = (lines.find((l) => l.startsWith("# ")) || "# Meeting").slice(2).trim();
+  const metaLine = lines.find((l) => / · \d+(:\d\d)+ · /.test(l)) || "";
+  const [when, length, mode, withWho] = (() => {
+    const parts = metaLine.split(" · ");
+    const w = parts.find((p) => p.startsWith("with ")) || "";
+    return [parts[0] || "", parts[1] || "", parts[2] || "", w.slice(5)];
+  })();
+  const goal = (lines.find((l) => l.startsWith("Goal: ")) || "").slice(6);
+  const sections = [];
+  let current = null;
+  for (const line of lines) {
+    const h = line.match(/^## (.+)$/);
+    if (h) { current = { name: h[1].trim(), body: [] }; sections.push(current); continue; }
+    if (current) current.body.push(line);
+  }
+  const bodyOf = (name) => { const s = sections.find((x) => x.name.toLowerCase() === name.toLowerCase()); return s ? s.body.join("\n").trim() : ""; };
+
+  document.title = `${title} · Cuecard`;
+  $("#title").textContent = title;
+  $("#eyebrow").textContent = [mode, when, length && `${length}`].filter(Boolean).join(" · ");
+  withWho.split(",").map((s) => s.trim()).filter(Boolean).forEach((n) => $("#people").append(el("li", null, n)));
+  if (goal) { $("#goal").hidden = false; $("#goal").textContent = goal; }
+  $("#note").href = data.note;
+
+  // Main column: the recap, in the order it was written.
+  const doc = $("#doc");
+  const skip = new Set(["captured live", "transcript"]);
+  const recap = sections.filter((s) => !skip.has(s.name.toLowerCase()) && s.body.join("").trim());
+  if (!recap.length) doc.append(el("p", "empty", "No recap was written for this meeting. What was captured live and the transcript are below."));
+  for (const s of recap) {
+    const sec = el("section", s.name.toLowerCase().includes("summary") ? "summary" : s.name.toLowerCase().includes("follow-up") || s.name.toLowerCase().includes("thank-you") ? "followup" : "");
+    const h = el("h2", null, s.name);
+    const body = s.body.join("\n").trim();
+    const count = body.split("\n").filter((l) => /^\s*[-*] /.test(l)).length;
+    if (count > 1) h.append(el("span", "n num", String(count)));
+    if (sec.className === "followup") {
+      const b = el("button", "btn copy", "Copy");
+      b.type = "button";
+      b.onclick = () => navigator.clipboard.writeText(body).then(() => { b.textContent = "Copied"; b.classList.add("done"); });
+      h.append(b);
+    }
+    sec.append(h, render(body));
+    doc.append(sec);
+  }
+
+  // Side: counts, then what was captured live, collapsed by kind.
+  const side = $("#side");
+  const live = bodyOf("Captured live");
+  const liveParts = live.split(/\n(?=### )/).map((b) => {
+    const [head, ...rest] = b.trim().split("\n");
+    return { name: head.replace(/^### /, ""), body: rest.join("\n").trim() };
+  }).filter((p) => p.body);
+  const countIn = (name) => { const p = liveParts.find((x) => x.name.toLowerCase().startsWith(name)); return p ? p.body.split("\n").filter((l) => /^- /.test(l)).length : 0; };
+  const transcript = bodyOf("Transcript").split("\n").map((l) => l.trim()).map((l) => l.match(/^\[(\d+(?::\d\d)+)\] (You|Them): (.*)$/)).filter(Boolean);
+  const stats = el("div", "panel");
+  stats.append(el("h2", null, "At a glance"));
+  const grid = el("div", "stats");
+  [[countIn("action"), "actions"], [countIn("decision"), "decisions"], [countIn("open question"), "questions"],
+   [transcript.filter((t) => t[2] === "You").length, "lines from you"], [transcript.filter((t) => t[2] === "Them").length, "from them"],
+   [(liveParts.find((p) => /suggested/i.test(p.name))?.body.split("\n").filter((l) => /^- /.test(l)).length) || 0, "suggestions"]]
+    .forEach(([n, label]) => { const s = el("div", "stat"); s.append(el("b", "num", String(n)), el("span", null, label)); grid.append(s); });
+  stats.append(grid);
+  side.append(stats);
+  if (liveParts.length) {
+    const panel = el("div", "panel");
+    panel.append(el("h2", null, "Captured live"));
+    for (const p of liveParts) {
+      const d = el("details");
+      const n = p.body.split("\n").filter((l) => /^- /.test(l)).length;
+      const s = el("summary"); s.append(el("span", null, p.name.replace(/\s*\(.*\)$/, "")), el("span", "n num", String(n)));
+      d.append(s, render(p.body));
+      panel.append(d);
+    }
+    side.append(panel);
+  }
+
+  // Transcript with speaker filter and search.
+  $("#tcount").textContent = transcript.length ? `· ${transcript.length}` : "";
+  let who = "", query = "";
+  const list = $("#lines");
+  const draw = () => {
+    list.replaceChildren();
+    const shown = transcript.filter((t) => (!who || t[2] === who) && (!query || t[3].toLowerCase().includes(query)));
+    if (!shown.length) { list.append(el("li", "empty", transcript.length ? "Nothing matches." : "No transcript.")); return; }
+    for (const t of shown) {
+      const li = el("li", t[2] === "You" ? "you" : "them");
+      const text = el("span", "text");
+      text.innerHTML = query ? esc(t[3]).replace(new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), (m) => `<mark>${m}</mark>`) : esc(t[3]);
+      li.append(el("time", "num", t[1]), el("span", "who", t[2]), text);
+      list.append(li);
+    }
+  };
+  document.querySelectorAll(".tfilter button").forEach((b) => b.addEventListener("click", () => {
+    who = b.dataset.who;
+    document.querySelectorAll(".tfilter button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    draw();
+  }));
+  $("#tsearch").addEventListener("input", (e) => { query = e.target.value.trim().toLowerCase(); draw(); });
+  draw();
+
+  $("#copy").addEventListener("click", () => navigator.clipboard.writeText(md).then(() => {
+    $("#copy").textContent = "Copied"; $("#copy").classList.add("done");
+  }));
+})();
+</script>
+</body>
+</html>

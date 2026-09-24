@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Log.write("launch")
+        DispatchQueue.global(qos: .utility).async { Pages.rebuild() }
         panel = PanelController(session: session)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.imagePosition = .imageLeading
@@ -67,7 +68,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc func pause() { session.pause() }
     @objc func newMeeting() { session.reset(); panel.focus() }
     @objc func openFolder() { NSWorkspace.shared.open(Prefs.meetingsFolder) }
-    @objc func openRecent(_ item: NSMenuItem) { if let url = item.representedObject as? URL { NSWorkspace.shared.open(url) } }
+    @objc func openRecent(_ item: NSMenuItem) {
+        guard let note = item.representedObject as? URL else { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            Pages.rebuild()
+            let page = Pages.page(for: note)
+            DispatchQueue.main.async { NSWorkspace.shared.open(FileManager.default.fileExists(atPath: page.path) ? page : note) }
+        }
+    }
+    @objc func openLibrary() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let url = Pages.rebuild()
+            DispatchQueue.main.async { NSWorkspace.shared.open(url) }
+        }
+    }
     @objc func openLog() { NSWorkspace.shared.open(Log.url) }
     @objc func setModel(_ item: NSMenuItem) {
         if let raw = item.representedObject as? String, let model = SuggestModel(rawValue: raw) { Prefs.shared.model = model }
@@ -175,6 +189,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         sub.addItem(.separator())
         sub.addItem(item("Open meetings folder", #selector(openFolder)))
         recent.submenu = sub
+        menu.addItem(item("Open meetings library", #selector(openLibrary), key: "l"))
         menu.addItem(recent)
         menu.addItem(.separator())
 

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuecard · Meetings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: oklch(97.2% 0.011 75);
+  --paper-2: oklch(94.6% 0.016 72);
+  --card: oklch(99% 0.006 80);
+  --ink: oklch(23% 0.012 60);
+  --ink-2: oklch(40% 0.018 62);
+  --ink-3: oklch(56% 0.02 66);
+  --line: oklch(89% 0.018 72);
+  --amber: oklch(72% 0.15 70);
+  --amber-wash: oklch(93% 0.05 80);
+  --shadow: 0 1px 1px oklch(30% 0.03 60 / 0.06), 0 6px 18px -8px oklch(30% 0.04 60 / 0.22);
+  --ui: "Hanken Grotesk", ui-sans-serif, sans-serif;
+  --voice: "Newsreader", "Iowan Old Style", Georgia, serif;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: oklch(17.5% 0.01 60);
+    --paper-2: oklch(21.5% 0.012 62);
+    --card: oklch(20.5% 0.011 62);
+    --ink: oklch(93% 0.012 75);
+    --ink-2: oklch(78% 0.016 72);
+    --ink-3: oklch(62% 0.02 68);
+    --line: oklch(29% 0.014 62);
+    --amber: oklch(78% 0.14 75);
+    --amber-wash: oklch(30% 0.05 70);
+    --shadow: 0 1px 1px oklch(0% 0 0 / 0.3), 0 10px 30px -12px oklch(0% 0 0 / 0.6);
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 15px/1.5 var(--ui); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 6px; }
+.num { font-variant-numeric: tabular-nums; }
+
+.bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-height: 60px;
+  padding: 10px clamp(16px, 3vw, 40px); background: var(--paper); box-shadow: 0 1px 0 var(--line); }
+.brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 650; }
+.brand svg { width: 22px; height: 17px; color: var(--amber); }
+.count { color: var(--ink-3); }
+.filters { display: inline-flex; flex-wrap: wrap; padding: 3px; border-radius: 10px; background: var(--paper-2); margin-left: auto; }
+.filters button { height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: none; cursor: pointer; font-size: 13.5px; font-weight: 550; color: var(--ink-3); }
+.filters button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px oklch(30% 0.03 60 / 0.12); }
+.search { width: min(260px, 100%); height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--paper-2); }
+
+main { max-width: 980px; margin: 0 auto; padding: clamp(24px, 3vw, 44px) clamp(16px, 3vw, 40px) 90px; }
+.latest { display: block; padding: clamp(20px, 3vw, 30px); border-radius: 18px; background: var(--card); box-shadow: var(--shadow); margin-bottom: 36px; }
+.latest .eyebrow { margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.latest h1 { margin: 6px 0 0; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.15; font-weight: 650; letter-spacing: -0.02em; }
+.latest .gist { margin: 12px 0 0; font: italic 400 19px/1.45 var(--voice); color: var(--ink-2); }
+.latest .meta, .row .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 13px; color: var(--ink-3); }
+.latest:hover h1, .row:hover .row-title { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+.day h2 { margin: 28px 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.rows { list-style: none; margin: 0; padding: 0; }
+.row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); }
+.rows li:first-child .row { border-top: 0; }
+.row time { font-weight: 650; padding-top: 1px; }
+.row .kind { display: block; font-size: 12px; color: var(--ink-3); }
+.row-title { margin: 0; font-weight: 620; font-size: 16px; }
+.row-gist { margin: 3px 0 0; font: italic 400 16.5px/1.4 var(--voice); color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.row .meta { margin-top: 6px; }
+.tag { padding: 1px 8px; border-radius: 99px; background: var(--amber-wash); color: var(--ink-2); font-weight: 550; }
+.none { color: var(--ink-3); padding: 40px 0; text-align: center; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="brand">
+    <svg viewBox="0 0 22 17" fill="none" aria-hidden="true"><rect x="1.2" y="1.8" width="19.6" height="13.4" rx="2.2" stroke="currentColor" stroke-width="1.6"/><rect x="1.2" y="4.6" width="19.6" height="1.3" fill="currentColor"/><rect x="4" y="8.2" width="13" height="2.4" rx="1.2" fill="currentColor"/><rect x="4" y="11.6" width="8" height="1.3" rx=".65" fill="currentColor"/></svg>
+    Cuecard <span class="count num" id="count"></span>
+  </span>
+  <div class="filters" id="filters" role="group" aria-label="Kind of meeting"></div>
+  <input class="search" id="search" type="search" placeholder="Search titles, people, summaries…" aria-label="Search meetings">
+</div>
+<main id="main"></main>
+
+<script id="data" type="application/json">__LIBRARY_JSON__</script>
+<script>
+(() => {
+  const meetings = JSON.parse(document.getElementById("data").textContent).sort((a, b) => new Date(b.created) - new Date(a.created));
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  const main = document.getElementById("main");
+  document.getElementById("count").textContent = `· ${meetings.length}`;
+  let mode = "", query = "";
+
+  const modes = [...new Set(meetings.map((m) => m.mode).filter(Boolean))];
+  const filters = document.getElementById("filters");
+  ["", ...modes].forEach((m) => {
+    const b = el("button", null, m || "All");
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(m === ""));
+    b.onclick = () => { mode = m; filters.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); draw(); };
+    filters.append(b);
+  });
+
+  const dayLabel = (d) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const day = new Date(d); day.setHours(0, 0, 0, 0);
+    const diff = Math.round((today - day) / 86400000);
+    if (diff === 0) return "Today";
+    if (diff === 1) return "Yesterday";
+    return d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  };
+  const timeOf = (d) => d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const meta = (m) => {
+    const box = el("div", "meta");
+    [m.length && `${m.length}`, m.people && `${m.people} ${m.people === 1 ? "person" : "people"}`,
+     m.actions && `${m.actions} action ${m.actions === 1 ? "item" : "items"}`, m.decisions && `${m.decisions} ${m.decisions === 1 ? "decision" : "decisions"}`]
+      .filter(Boolean).forEach((t) => box.append(el("span", "num", t)));
+    if (!m.recap) box.append(el("span", "tag", "No recap"));
+    return box;
+  };
+
+  const draw = () => {
+    main.replaceChildren();
+    const shown = meetings.filter((m) => (!mode || m.mode === mode)
+      && (!query || `${m.title} ${m.with || ""} ${m.gist || ""}`.toLowerCase().includes(query)));
+    if (!shown.length) { main.append(el("p", "none", meetings.length ? "Nothing matches." : "Meetings you listen to with Cuecard show up here.")); return; }
+    const [first, ...rest] = shown;
+    const latest = el("a", "latest");
+    latest.href = first.href;
+    const d = new Date(first.created);
+    latest.append(el("p", "eyebrow", `Latest · ${first.mode} · ${dayLabel(d)}, ${timeOf(d)}`), el("h1", null, first.title));
+    if (first.gist) latest.append(el("p", "gist", first.gist));
+    latest.append(meta(first));
+    main.append(latest);
+    let section = null, label = "";
+    for (const m of rest) {
+      const d = new Date(m.created);
+      if (dayLabel(d) !== label) {
+        label = dayLabel(d);
+        section = el("section", "day");
+        section.append(el("h2", null, label), el("ol", "rows"));
+        main.append(section);
+      }
+      const row = el("a", "row");
+      row.href = m.href;
+      const when = el("div");
+      when.append(el("time", "num", timeOf(d)), el("span", "kind", m.mode));
+      const body = el("div");
+      body.append(el("p", "row-title", m.title));
+      if (m.gist) body.append(el("p", "row-gist", m.gist));
+      body.append(meta(m));
+      row.append(when, body);
+      const li = el("li"); li.append(row);
+      section.querySelector("ol").append(li);
+    }
+  };
+  document.getElementById("search").addEventListener("input", (e) => { query = e.target.value.trim().toLowerCase(); draw(); });
+  draw();
+})();
+</script>
+</body>
+</html>
