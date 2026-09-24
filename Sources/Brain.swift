@@ -184,7 +184,7 @@ final class Brain {
         }
         if p("filler") >= 0.75, p("asked_you") < 0.6 { return }
 
-        if speaker == .them, p("asked_you") >= 0.7 { enqueue(.asked(text)) }
+        if speaker == .them, p("asked_you") >= 0.7, meeting.mode.captures.contains(.askedYou) { enqueue(.asked(text)) }
 
         // At most two captures per turn, from different families, strongest first. One sentence that is an
         // action item, a next step and a fact is filed once, as the action item.

@@ -65,8 +65,7 @@ struct Frame: Codable, Identifiable, Equatable {
         case .review: return ["review"]
         case .decision: return ["decision"]
         case .general, .customer: return ["opportunity-tree"]
-        case .oneOnOne: return []
-        case .interviewed: return []
+        case .oneOnOne, .interviewed, .recording: return []
         }
     }
 }

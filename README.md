@@ -26,6 +26,7 @@ Signals by mode:
 | 1:1 | Hesitation, Frustration, Overload, Unspoken ask, Growth, Low energy | wellbeing, workload, blockers, growth, follow-ups |
 | Review / decision | Disagreement, No owner, Scope creep, Dependency | what's decided, options, owners, what changes our mind |
 | Customer call | Pain, Workaround, Objection, Buying signal, Quote | discovery |
+| Watching a recording | Unclear, Claim to check, Ask the presenter, Relevant to you | questions to take away; no SAY cards, since nobody can ask you anything |
 
 Follow-up questions come from two places: the **question bank** Claude writes from your prep (Jev picks the one that fits the moment and ticks it off when you ask it), and **live questions** Claude writes when a signal or a vague answer needs a new one.
 

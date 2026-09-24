@@ -4,7 +4,7 @@ import Foundation
 /// seeds the question bank, and shapes the suggestions and the recap.
 enum Playbook {
     enum Mode: String, CaseIterable, Identifiable {
-        case general, interviewing, interviewed, oneOnOne, review, decision, customer
+        case general, interviewing, interviewed, oneOnOne, review, decision, customer, recording
         var id: String { rawValue }
 
         var label: String {
@@ -16,6 +16,7 @@ enum Playbook {
             case .review: return "Product review"
             case .decision: return "Decision"
             case .customer: return "Customer call"
+            case .recording: return "Watching a recording"
             }
         }
 
@@ -28,6 +29,7 @@ enum Playbook {
             case .review: return "doc.text.magnifyingglass"
             case .decision: return "checkmark.seal"
             case .customer: return "building.2"
+            case .recording: return "play.rectangle"
             }
         }
 
@@ -41,6 +43,7 @@ enum Playbook {
             case .review: return "Grades the proposal as it's presented and suggests the question that finds the weak spot kindly."
             case .decision: return "Pins down the decision, owners and dates, and flags fast agreement and lukewarm yeses."
             case .customer: return "Captures pains, workarounds, objections and quotable lines."
+            case .recording: return "You're only listening: suggests questions to ask later, what to clarify or look up, and claims to check."
             }
         }
 
@@ -54,6 +57,7 @@ enum Playbook {
             case .review: return "The doc or spec being reviewed, what you need from the review, known concerns…"
             case .decision: return "The proposal, the options, who needs to agree, known concerns…"
             case .customer: return "Who they are, what they use today, deal stage, what you want to learn…"
+            case .recording: return "What the recording is, who is presenting, what you already know, what you need from it…"
             }
         }
 
@@ -66,6 +70,7 @@ enum Playbook {
             case .review: return "e.g. Decide if the spec is ready to build"
             case .decision: return "e.g. Get a yes on the October ship date"
             case .customer: return "e.g. Understand why onboarding stalls"
+            case .recording: return "e.g. Work out what the regions launch means for my team"
             }
         }
 
@@ -74,6 +79,8 @@ enum Playbook {
         var captures: Set<Category> {
             switch self {
             case .interviewing, .interviewed: return [.action, .nextStep, .fact]
+            // Nobody in a recording can ask the user anything.
+            case .recording: return Set(Category.allCases).subtracting([.askedYou])
             default: return Set(Category.allCases)
             }
         }
@@ -137,6 +144,13 @@ enum Playbook {
                     Signal("buying", "Buying signal", "Does `latest.text` show intent: timeline, budget, next steps, or asking about pricing or rollout?", positive: true),
                     Signal("quote", "Quote", "Is `latest.text` a vivid, quotable line from the customer that captures their situation?", positive: true),
                 ]
+            case .recording:
+                return [
+                    Signal("unclear", "Unclear", "Does `latest.text` use a term, acronym, product name or idea without explaining it, or skip a step a listener would need?"),
+                    Signal("check", "Claim to check", "Does `latest.text` make a claim, number or date the listener should verify or get the source for before relying on it?"),
+                    Signal("ask_later", "Ask the presenter", "Does `latest.text` leave something open that the presenter or their team could answer: how it works, when, who owns it, what's not covered?"),
+                    Signal("relevant", "Relevant to you", "Does `latest.text` touch the user's own work, team or goal as described in `meeting.context` or `meeting.goal`?", positive: true),
+                ]
             }
         }
 
@@ -157,6 +171,8 @@ enum Playbook {
                 return "Questions that drive to a decision: what exactly is being decided, options and trade-offs, who owns what by when, risks, what would change our mind, what we need from other teams."
             case .customer:
                 return "Discovery questions: their current process, the last time the problem happened, cost of the problem, workarounds, who else is involved, what they tried, what success looks like, timeline and decision process."
+            case .recording:
+                return "Questions to keep in mind while watching a recording, so the user gets what they need from it: what it changes for their work, how it works, when it lands, who owns it, what it doesn't cover, and what to ask the presenter afterwards."
             }
         }
 
@@ -177,6 +193,8 @@ enum Playbook {
                 return "Drive to closure: name the decision, the owner and the date. Flag disagreement that was glossed over and asks that grew scope."
             case .customer:
                 return "Stay curious and specific: ask about the last time it happened, how much it costs, who else feels it. Never pitch; learn."
+            case .recording:
+                return "The user is watching a recording and cannot speak to anyone in it. Never write SAY cards. ASK cards are questions the user should take away: to ask the presenter or their team afterwards, to clarify something that was skipped, or to look up. Write each as the question itself, one idea, specific to what was just said, and when it matters to the user's own work say why in a few words. When a term goes unexplained, gloss it in one line if you know it."
             }
         }
 
@@ -195,6 +213,8 @@ enum Playbook {
                 return "## Summary\n## Signals worth following up\n## Commitments (mine / theirs)\n## Topics for next 1:1\n## Follow-up note"
             case .customer:
                 return "## Summary\n## Pains (with quotes)\n## Current workaround\n## Objections\n## Buying signals and next steps\n## Follow-up note"
+            case .recording:
+                return "## Summary\n## Key points\n## Questions to ask (and who to ask)\n## To clarify or look up\n## Claims to check\n## What it means for my work\n## Follow-ups"
             }
         }
     }
