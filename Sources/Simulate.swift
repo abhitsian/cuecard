@@ -10,17 +10,20 @@ enum Simulate {
         guard let text = try? String(contentsOfFile: path, encoding: .utf8) else { print("can't read \(path)"); exit(1) }
         var lines: [(Speaker, String)] = []
         var title = "Simulated meeting", goal = "", context = ""
+        var attendees: [String] = []
         var frameIDs: [String]?
         for raw in text.components(separatedBy: "\n") {
             let line = raw.trimmingCharacters(in: .whitespaces)
             if line.hasPrefix("# title:") { title = String(line.dropFirst(8)).trimmingCharacters(in: .whitespaces) }
+            else if line.hasPrefix("# with:") { attendees = line.dropFirst(7).split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) } }
             else if line.hasPrefix("# goal:") { goal = String(line.dropFirst(7)).trimmingCharacters(in: .whitespaces) }
             else if line.hasPrefix("# context:") { context += String(line.dropFirst(10)).trimmingCharacters(in: .whitespaces) + "\n" }
             else if line.hasPrefix("# frames:") { frameIDs = line.dropFirst(9).split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) } }
             else if line.hasPrefix("You:") { lines.append((.you, String(line.dropFirst(4)).trimmingCharacters(in: .whitespaces))) }
             else if line.hasPrefix("Them:") { lines.append((.them, String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces))) }
         }
-        let meeting = Meeting(title: title, mode: Playbook.Mode(rawValue: mode ?? "") ?? .general, goal: goal, context: context)
+        let meeting = Meeting(title: title, mode: Playbook.Mode(rawValue: mode ?? "") ?? .general, goal: goal, context: context,
+                              attendees: attendees)
         let library = Frame.all()
         meeting.frames = (frameIDs ?? Frame.defaults(for: meeting.mode)).compactMap { id in library.first { $0.id == id } }
         let brain = Brain(meeting: meeting)
@@ -72,6 +75,23 @@ enum Simulate {
         }
         // Give the bank a head start, as prep would before a real meeting.
         DispatchQueue.main.asyncAfter(deadline: .now() + (CommandLine.arguments.contains("--no-wait") ? 0.5 : 10)) { next() }
+        RunLoop.main.run()
+    }
+
+    /// `Cuecard --notion "<title>" [--with "A, B"] [--goal "…"] [--mode oneOnOne]`: runs the Notion lookup a meeting
+    /// start would, and prints the brief (or NONE) and how long it took.
+    static func notion(_ args: [String]) {
+        func value(_ flag: String) -> String? { args.firstIndex(of: flag).flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil } }
+        let title = value("--notion") ?? "Meeting"
+        let with = value("--with").map { $0.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) } } ?? []
+        let mode = Playbook.Mode(rawValue: value("--mode") ?? "") ?? .general
+        let started = Date()
+        Task {
+            let brief = await NotionContext.fetch(title: title, attendees: with, goal: value("--goal") ?? "", mode: mode)
+            print(brief ?? "NONE")
+            print(String(format: "\n[seconds=%.0f]", Date().timeIntervalSince(started)))
+            exit(0)
+        }
         RunLoop.main.run()
     }
 

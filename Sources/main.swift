@@ -4,6 +4,8 @@ let arguments = CommandLine.arguments
 if let i = arguments.firstIndex(of: "--simulate"), arguments.count > i + 1 {
     let mode = arguments.count > i + 2 && !arguments[i + 2].hasPrefix("--") ? arguments[i + 2] : nil
     Simulate.run(script: arguments[i + 1], mode: mode)
+} else if arguments.contains("--notion") {
+    Simulate.notion(arguments)
 } else if let i = arguments.firstIndex(of: "--transcribe") {
     Simulate.transcribe(Array(arguments.dropFirst(i + 1)))
 } else if let i = arguments.firstIndex(of: "--probe-tap") {
