@@ -78,18 +78,19 @@ enum Simulate {
         RunLoop.main.run()
     }
 
-    /// `Cuecard --notion "<title>" [--with "A, B"] [--goal "…"] [--mode oneOnOne]`: runs the Notion lookup a meeting
-    /// start would, and prints the brief (or NONE) and how long it took.
+    /// `Cuecard --notion --transcript <file> [--title "…"] [--goal "…"] [--mode general] [--as-of ISO]`: runs the
+    /// Notion lookup the meeting would run from what was said, and prints the topic, the brief (or NONE) and time.
     static func notion(_ args: [String]) {
         func value(_ flag: String) -> String? { args.firstIndex(of: flag).flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil } }
-        let title = value("--notion") ?? "Meeting"
-        let with = value("--with").map { $0.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) } } ?? []
+        let transcript = value("--transcript").flatMap { try? String(contentsOfFile: $0, encoding: .utf8) } ?? ""
         let mode = Playbook.Mode(rawValue: value("--mode") ?? "") ?? .general
+        let asOf = value("--as-of").flatMap { ISO8601DateFormatter().date(from: $0) } ?? Date()
         let started = Date()
         Task {
-            let asOf = value("--as-of").flatMap { ISO8601DateFormatter().date(from: $0) } ?? Date()
-            let brief = await NotionContext.fetch(title: title, attendees: with, goal: value("--goal") ?? "", mode: mode, asOf: asOf)
-            print(brief ?? "NONE")
+            let found = await NotionContext.fetch(transcript: transcript, title: value("--title") ?? "", goal: value("--goal") ?? "",
+                                                  mode: mode, asOf: asOf)
+            print("TOPIC: \(found.topic ?? "(none)")")
+            print(found.brief ?? "NONE")
             print(String(format: "\n[seconds=%.0f]", Date().timeIntervalSince(started)))
             exit(0)
         }

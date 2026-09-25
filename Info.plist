@@ -15,6 +15,5 @@
 	<key>NSMicrophoneUsageDescription</key><string>Cuecard transcribes what you say in meetings, on this Mac.</string>
 	<key>NSAudioCaptureUsageDescription</key><string>Cuecard listens to the other side of your calls so it can suggest questions and take notes.</string>
 	<key>NSSpeechRecognitionUsageDescription</key><string>Cuecard turns meeting audio into text on this Mac.</string>
-	<key>NSCalendarsFullAccessUsageDescription</key><string>Cuecard reads the meeting happening now (title, people, invite notes) to give better suggestions.</string>
 </dict>
 </plist>

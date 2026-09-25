@@ -16,8 +16,6 @@ final class Session: ObservableObject {
         var goal = ""
         var context = Prefs.shared.savedContext(for: Prefs.shared.lastMode)
         var attendees: [String] = []
-        var calendarNotes = ""
-        var calendarTitle: String?
         var bank: [BankQuestion] = []
         var preparing = false
         /// Looking in Notion, and what came of the last look.
@@ -62,22 +60,6 @@ final class Session: ObservableObject {
 
     // MARK: Prep
 
-    func refreshFromCalendar() {
-        guard Prefs.shared.useCalendar, meeting == nil else { return }
-        CalendarContext.current { [weak self] now in
-            guard let self, let now, self.meeting == nil else { return }
-            if self.prep.title.isEmpty || self.prep.title == self.prep.calendarTitle { self.prep.title = now.title }
-            self.prep.calendarTitle = now.title
-            self.prep.attendees = now.attendees
-            self.prep.calendarNotes = now.notes
-            if self.prep.mode == .general, now.attendees.count == 2 || now.title.lowercased().contains("1:1") || now.title.contains("1-1") {
-                self.setMode(.oneOnOne)
-            } else if now.title.lowercased().contains("interview") {
-                self.setMode(.interviewing)
-            }
-        }
-    }
-
     func setMode(_ mode: Playbook.Mode) {
         guard prep.mode != mode else { return }
         Prefs.shared.saveContext(prep.context, for: prep.mode)
@@ -88,8 +70,7 @@ final class Session: ObservableObject {
     }
 
     private var fullContext: String {
-        [prep.context, prep.calendarNotes.isEmpty ? "" : "From the calendar invite:\n\(prep.calendarNotes)"]
-            .filter { !$0.isEmpty }.joined(separator: "\n\n")
+        prep.context
     }
 
     /// Writes the question bank now, so the user can look it over before the meeting.
@@ -106,36 +87,59 @@ final class Session: ObservableObject {
         }
     }
 
-    /// Adds what Notion knows about this meeting to the context box, so the question bank can use it.
+    /// Adds what Notion knows to the context box, from what the user typed (title, goal, notes). There is no
+    /// transcript yet, so this needs something typed; during the meeting the lookup runs on what is said.
     func pullFromNotion() {
         guard !prep.fetchingNotion else { return }
+        guard !(prep.title.isEmpty && prep.goal.isEmpty && prep.context.isEmpty) else {
+            prep.notionNote = "Type a title, goal or notes first. During the meeting Cuecard looks up Notion from what is said."
+            return
+        }
         prep.fetchingNotion = true
         prep.notionNote = nil
         let p = prep
         Task { @MainActor in
-            let title = p.title.isEmpty ? (p.calendarTitle ?? "Meeting") : p.title
-            let found = await NotionContext.fetch(title: title, attendees: p.attendees, goal: p.goal, mode: p.mode)
+            let found = await NotionContext.fetch(transcript: "", title: p.title, goal: p.goal, notes: p.context, mode: p.mode)
             self.prep.fetchingNotion = false
-            guard let found else { self.prep.notionNote = "Nothing relevant found in Notion."; return }
+            guard let brief = found.brief else { self.prep.notionNote = "Nothing relevant found in Notion."; return }
             self.prep.context = self.prep.context.replacingOccurrences(of: NotionContext.marker, with: "[Notion, earlier]")
-            self.prep.context += (self.prep.context.isEmpty ? "" : "\n\n") + found
+            self.prep.context += (self.prep.context.isEmpty ? "" : "\n\n") + brief
             self.prep.notionNote = "Added from Notion. Prepare writes questions from it."
         }
     }
 
-    /// At the start: if prep didn't pull Notion context, fetch it in the background, add it to the meeting's
-    /// context (every live suggestion reads it) and write a few questions from it into the bank.
-    private func notionAtStart(_ m: Meeting) {
-        guard Prefs.shared.notionContext, !m.context.contains(NotionContext.marker) else { return }
+    /// During the meeting, once enough has been said (about 3 minutes in) and again around 12 minutes: work out
+    /// what the meeting is about from the transcript, name it if the user didn't, and bring in Notion context.
+    /// The brief replaces the previous one in the meeting's context (every suggestion reads it), and a few
+    /// questions from it go into the bank.
+    private func notionCheck(_ m: Meeting) {
+        guard Prefs.shared.notionContext, !m.notionBusy, m.phase == .listening, m.notionLookups < 2 else { return }
+        let elapsed = Date().timeIntervalSince(m.started)
+        let words = m.lines.reduce(0) { $0 + $1.text.split(separator: " ").count }
+        let due = m.notionLookups == 0 ? (elapsed > 150 && words > 120) : elapsed > 720
+        guard due else { return }
+        m.notionBusy = true
+        m.notionLookups += 1
+        let round = m.notionLookups
+        let transcript = m.transcript(limit: 80)
+        Log.write("notion: lookup \(round) at \(m.elapsed), \(words) words said")
         Task { @MainActor in
-            guard let found = await NotionContext.fetch(title: m.title, attendees: m.attendees, goal: m.goal, mode: m.mode),
-                  m.live else { return }
-            m.context += (m.context.isEmpty ? "" : "\n\n") + found
-            m.notice = "Added context from Notion. Questions from it are under Questions."
-            DispatchQueue.main.asyncAfter(deadline: .now() + 8) { if m.notice?.hasPrefix("Added context from Notion") == true { m.notice = nil } }
+            let found = await NotionContext.fetch(transcript: transcript, title: m.userTitled ? m.title : "", goal: m.goal,
+                                                  mode: m.mode, asOf: m.started)
+            m.notionBusy = false
+            if let topic = found.topic, !m.userTitled {
+                Log.write("title: \(topic)")
+                m.title = topic
+            }
+            guard let brief = found.brief, m.live else { return }
+            if let old = m.context.range(of: NotionContext.marker) { m.context = String(m.context[..<old.lowerBound]) }
+            m.context = m.context.trimmingCharacters(in: .whitespacesAndNewlines)
+            m.context += (m.context.isEmpty ? "" : "\n\n") + brief
+            m.notice = "Pulled context from Notion. Questions from it are under Questions."
+            DispatchQueue.main.asyncAfter(deadline: .now() + 8) { if m.notice?.hasPrefix("Pulled context from Notion") == true { m.notice = nil } }
             var added = 0
-            await Brain.writeBank(mode: m.mode, title: m.title, goal: m.goal, context: found, attendees: m.attendees) { q in
-                guard added < 5, !m.bank.contains(where: { $0.text == q.text }) else { return }
+            await Brain.writeBank(mode: m.mode, title: m.title, goal: m.goal, context: brief, attendees: m.attendees) { q in
+                guard added < (round == 1 ? 5 : 3), !m.bank.contains(where: { $0.text == q.text }) else { return }
                 var q = q
                 q.topic = "Notion · " + q.topic
                 m.bank.append(q)
@@ -180,6 +184,7 @@ final class Session: ObservableObject {
         prefs.saveContext(prep.context, for: prep.mode)
         let title = prep.title.isEmpty ? (detected.map { "\($0) call" } ?? "Meeting") : prep.title
         let m = Meeting(title: title, mode: prep.mode, goal: prep.goal, context: fullContext, attendees: prep.attendees)
+        m.userTitled = !prep.title.isEmpty
         m.bank = prep.bank
         m.frames = prep.frames.compactMap { id in library.first { $0.id == id } }
         m.hearsThem = prefs.systemAudio
@@ -194,7 +199,6 @@ final class Session: ObservableObject {
             NSSound(named: "Tink")?.play()
         }
         self.brain = brain
-        notionAtStart(m)
         onShowPanel?()
         onChange?()
         Log.write("session: start mode=\(m.mode.rawValue) jev=\(brain.usesJev) model=\(prefs.model.short)")
@@ -284,6 +288,7 @@ final class Session: ObservableObject {
             if m.themSilent != silent { m.themSilent = silent }
             if Date().timeIntervalSince(lastSave) > 30 { lastSave = Date(); Archive.write(m) }
             checkHealth(m)
+            notionCheck(m)
             autoStopCheck(m)
         }
         onChange?()
@@ -403,7 +408,6 @@ final class Session: ObservableObject {
         prep = Prep()
         library = Frame.all()
         tab = .live
-        refreshFromCalendar()
         onChange?()
     }
 

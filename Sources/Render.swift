@@ -64,7 +64,6 @@ enum Render {
         } else {
             session.prep.title = "1:1 with Maya"
             session.prep.mode = .oneOnOne
-            session.prep.calendarTitle = "1:1 with Maya"
             session.prep.attendees = ["Maya", "Sam"]
             session.prep.mode = .interviewing
             session.prep.frames = ["story", "product-case", "taste"]

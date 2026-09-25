@@ -5,9 +5,15 @@ enum Archive {
     static func write(_ m: Meeting) {
         let stamp = DateFormatter()
         stamp.dateFormat = "yyyy-MM-dd HHmm"
+        let safe = m.title.components(separatedBy: CharacterSet(charactersIn: "/:\\?%*|\"<>")).joined(separator: "-").prefix(60)
+        let named = Prefs.meetingsFolder.appendingPathComponent("\(stamp.string(from: m.started)) \(safe).md")
         if m.file == nil {
-            let safe = m.title.components(separatedBy: CharacterSet(charactersIn: "/:\\?%*|\"<>")).joined(separator: "-").prefix(60)
-            m.file = Prefs.meetingsFolder.appendingPathComponent("\(stamp.string(from: m.started)) \(safe).md")
+            m.file = named
+        } else if let old = m.file, old != named {
+            // The title changed (named from what was said, or by the recap): rename the note and drop its old page.
+            try? FileManager.default.moveItem(at: old, to: named)
+            try? FileManager.default.removeItem(at: Pages.page(for: old))
+            m.file = named
         }
         guard let file = m.file else { return }
         let day = DateFormatter()

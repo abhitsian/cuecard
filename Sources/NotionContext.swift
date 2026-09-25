@@ -25,30 +25,45 @@ enum NotionContext {
         return body.count > 40 ? body : nil
     }
 
-    static func fetch(title: String, attendees: [String], goal: String, mode: Playbook.Mode, asOf: Date = Date()) async -> String? {
+    /// What the lookup found: a short name for the meeting taken from what was said, and the Notion brief.
+    struct Result {
+        var topic: String?
+        var brief: String?
+    }
+
+    /// Looks up Notion for a meeting from what is being said (never the calendar: its titles are often wrong).
+    /// `transcript` is the recent conversation; `title`, `goal` and `notes` are only what the user typed in prep.
+    static func fetch(transcript: String, title: String = "", goal: String = "", notes: String = "", mode: Playbook.Mode,
+                      asOf: Date = Date()) async -> Result {
         guard let claude = ["\(NSHomeDirectory())/.local/bin/claude", "/opt/homebrew/bin/claude", "/usr/local/bin/claude"]
-            .first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else { return nil }
+            .first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else { return Result() }
+        let typed = [title.isEmpty || title == "Meeting" ? "" : "Title the user typed: \(title)",
+                     goal.isEmpty ? "" : "Their goal: \(goal)",
+                     notes.isEmpty ? "" : "Their prep notes:\n\(notes.prefix(2000))"].filter { !$0.isEmpty }.joined(separator: "\n")
         let prompt = """
-        The user is about to be in a meeting and wants the context they already have in Notion, so they can ask \
-        better questions. Search their Notion (task tracker, meeting notes, project and workstream pages) for what \
-        relates to this meeting. Read the few most relevant pages. Do not create or change anything.
+        The user is in a meeting (\(mode.label)) and wants the context they already have in Notion, so they can ask \
+        better questions. Work out what the meeting is about from what is being said below: the topic, the \
+        project, the people named. Then search their Notion (task tracker, meeting notes, project and workstream \
+        pages) for what relates to it and read the few most relevant pages. Do not create or change anything.
+        The meeting started \(asOf.formatted(date: .complete, time: .shortened)). Use only what was known before \
+        then: ignore notes, recaps or pages about this meeting itself.
 
-        The meeting starts \(asOf.formatted(date: .complete, time: .shortened)). Use only what was known before then: \
-        ignore any notes, recaps or pages about this meeting itself.
+        \(typed)
+        <transcript>
+        \(transcript.isEmpty ? "(nothing said yet)" : String(transcript.suffix(9000)))
+        </transcript>
 
-        Meeting: \(title)
-        Type: \(mode.label)
-        \(attendees.isEmpty ? "" : "With: \(attendees.joined(separator: ", "))")
-        \(goal.isEmpty ? "" : "Their goal: \(goal)")
-
-        Reply in plain Markdown, under 250 words, only these sections, leaving out any with nothing real in it:
+        Reply in plain Markdown. First line exactly: "Topic: " and a 3 to 8 word name for what this meeting is \
+        about, from the transcript (or the typed title). Then, under 250 words, only these sections, leaving out \
+        any with nothing real in it:
         ## Open items
         Tasks or asks still open that touch this meeting, with who owns them.
         ## Last time
         What was decided or left open the last time this group or topic met, with the date.
         ## Background
         Facts, numbers or constraints worth having in mind.
-        Name the Notion page each bullet comes from in parentheses. If nothing relevant exists, reply NONE.
+        Name the Notion page each bullet comes from in parentheses. If nothing in Notion relates, put NONE on its \
+        own line after the Topic line.
         """
         let process = Process()
         process.executableURL = URL(fileURLWithPath: claude)
@@ -63,7 +78,7 @@ enum NotionContext {
         environment["PATH"] = "\(NSHomeDirectory())/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
         process.environment = environment
         let started = Date()
-        return await withCheckedContinuation { done in
+        return await withCheckedContinuation { (done: CheckedContinuation<Result, Never>) in
             DispatchQueue.global(qos: .utility).async {
                 do {
                     try process.run()
@@ -73,10 +88,14 @@ enum NotionContext {
                     process.waitUntilExit()
                     let text = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                     Log.write("notion: \(process.terminationStatus) \(text.count) chars in \(Int(Date().timeIntervalSince(started)))s")
-                    done.resume(returning: process.terminationStatus == 0 ? brief(from: text).map { "\(marker)\n\($0)" } : nil)
+                    guard process.terminationStatus == 0 else { return done.resume(returning: Result()) }
+                    let topic = text.components(separatedBy: "\n").first { $0.hasPrefix("Topic:") }
+                        .map { $0.dropFirst(6).trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"*."))) }
+                    done.resume(returning: Result(topic: topic?.isEmpty == false ? topic : nil,
+                                                  brief: brief(from: text).map { "\(marker)\n\($0)" }))
                 } catch {
                     Log.write("notion: \(error)")
-                    done.resume(returning: nil)
+                    done.resume(returning: Result())
                 }
             }
         }

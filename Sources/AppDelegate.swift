@@ -39,7 +39,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             DispatchQueue.main.async { self?.panel.applySharing() }
         }
 
-        session.refreshFromCalendar()
         if ProcessInfo.processInfo.arguments.contains("--show") || !UserDefaults.standard.bool(forKey: "launched") {
             UserDefaults.standard.set(true, forKey: "launched")
             panel.show()
@@ -124,7 +123,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard let app, Prefs.shared.detectMeetings else { return }
         Log.write("detector: \(app) took the mic")
         if session.meeting != nil { session.reset() }
-        session.refreshFromCalendar()
         panel.show()
         // The offer fades if it isn't taken.
         DispatchQueue.main.asyncAfter(deadline: .now() + 45) { [weak self] in

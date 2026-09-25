@@ -124,6 +124,11 @@ final class Meeting: ObservableObject {
     enum Phase { case listening, paused, wrapping, done }
 
     @Published var title: String
+    /// The user typed the title in prep; otherwise it comes from what is said and may be replaced.
+    var userTitled = false
+    /// Notion lookups done during this meeting (they run a few minutes in, and again later).
+    var notionLookups = 0
+    var notionBusy = false
     @Published var mode: Playbook.Mode
     @Published var goal: String
     @Published var context: String

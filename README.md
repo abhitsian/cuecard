@@ -38,7 +38,7 @@ Follow-up questions come from two places: the **question bank** Claude writes fr
 - The panel is hidden from screen sharing by default.
 - Notes save to `~/Documents/Cuecard/` as Markdown: recap, captures, question coverage, transcript.
 
-Permissions: Microphone, System Audio Recording (for the other side), Calendar (optional).
+Permissions: Microphone and System Audio Recording (for the other side). Cuecard never reads your calendar: titles and Notion lookups come from what is said.
 
 ## Meeting pages
 

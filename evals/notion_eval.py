@@ -6,7 +6,8 @@ Usage: notion_eval.py <cases-dir> <out-dir> [--only <case-id-substring>] [--jobs
 Each case is a JSON file: {id, title, with: [names], mode, goal, lines: [[You|Them, text], ...], expect_none}.
 Cases hold real meeting content, so keep them (and the results) out of this repo.
 
-Stage 1, retrieval: runs `Cuecard --notion` for the meeting as Cuecard sees it at the start (title, attendees).
+Stage 1, retrieval: runs `Cuecard --notion` on the transcript slice, as Cuecard does a few minutes into a meeting
+(it never uses the calendar).
 Stage 2, use: runs `Cuecard --simulate` on the transcript slice twice, with the Notion brief as context and
 without, and collects the question bank and live ASK cards from each.
 
@@ -50,17 +51,22 @@ def run(cmd, timeout, input_text=None):
 # ---------- stage 1: retrieval ----------
 
 def fetch(case):
-    cmd = [str(APP), "--notion", case["title"], "--mode", case["mode"]]
-    if case["with"]:
-        cmd += ["--with", ", ".join(case["with"])]
+    # Cuecard never uses the calendar: the lookup sees only what was said (the case's calendar title and
+    # attendees are kept for reference, not passed in).
+    with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
+        f.write("\n".join(f"{who}: {text}" for who, text in case["lines"]))
+    cmd = [str(APP), "--notion", "--transcript", f.name, "--mode", case["mode"]]
     if case.get("start"):
         cmd += ["--as-of", case["start"]]  # past meetings: ignore Notion pages written after they happened
     start = time.time()
     out = run(cmd, 300)
     seconds = time.time() - start
-    brief = re.sub(r"\n\[seconds=\d+\]\s*$", "", out.strip()).strip()
+    body = re.sub(r"\n\[seconds=\d+\]\s*$", "", out.strip()).strip()
+    topic = (re.match(r"TOPIC: (.*)", body) or [None, ""])[1].strip()
+    brief = re.sub(r"^TOPIC: .*\n?", "", body).strip()
     none = brief.upper().startswith("NONE") or not brief
-    return {"brief": "" if none else brief, "none": none, "seconds": round(seconds)}
+    return {"brief": "" if none else brief, "none": none, "seconds": round(seconds),
+            "topic": "" if topic == "(none)" else topic}
 
 
 def bullets(brief):
@@ -69,10 +75,8 @@ def bullets(brief):
 
 # ---------- stage 2: use ----------
 
-def simulate(case, context):
-    script = [f"# title: {case['title']}"]
-    if case["with"]:
-        script.append("# with: " + ", ".join(case["with"]))
+def simulate(case, context, topic=""):
+    script = [f"# title: {topic or 'Meeting'}"]
     if case.get("goal"):
         script.append(f"# goal: {case['goal']}")
     script += [f"# context: {l}" for l in context.splitlines() if l.strip()]
@@ -189,7 +193,7 @@ def evaluate(case, out_dir):
     r["R3"] = ratio(sum(1 for x in rel if x.get("relevant")), len(rel))
     r["R4"] = got["seconds"]
     with cf.ThreadPoolExecutor(2) as pool:
-        with_run, without_run = pool.map(lambda ctx: simulate(case, ctx), [got["brief"], ""])
+        with_run, without_run = pool.map(lambda ctx: simulate(case, ctx, got["topic"]), [got["brief"], ""])
     r["with"], r["without"] = with_run, without_run
     found = anchors(got["brief"], case)
     r["anchors"] = sorted(found)
@@ -230,9 +234,9 @@ def report(results, out_dir):
              "| Check | Result | Pass |", "|---|---|---|"]
     for k, (v, ok) in s.items():
         lines.append(f"| {k} | {v} | {'—' if ok is None else ('pass' if ok else 'FAIL')} |")
-    lines += ["", "## Per meeting", "", "| Meeting | Brief | s | R3 | Qs with / without | U1 with | U2 with | U2 without |", "|---|---|---|---|---|---|---|---|"]
+    lines += ["", "## Per meeting", "", "| Calendar said | Topic from transcript | Brief | s | R3 | Qs with / without | U1 with | U2 with | U2 without |", "|---|---|---|---|---|---|---|---|---|"]
     for r in results:
-        lines.append(f"| {r['title'][:48]} | {'NONE' if r['none'] else str(len(bullets(r['brief']))) + ' items'} | {r['R4']} | {r['R3']} | "
+        lines.append(f"| {r['title'][:40]} | {r.get('topic', '')[:48]} | {'NONE' if r['none'] else str(len(bullets(r['brief']))) + ' items'} | {r['R4']} | {r['R3']} | "
                      f"{len(r['with']['questions'])} / {len(r['without']['questions'])} | {r['U1_with']} | {r['U2_with']} | {r['U2_without']} |")
     (out_dir / "report.md").write_text("\n".join(lines) + "\n")
     # A sample of judge verdicts for a person to label, to calibrate the judge.

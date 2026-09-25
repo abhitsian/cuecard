@@ -857,13 +857,6 @@ struct PrepScreen: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("What's it about?", systemImage: "2.circle").font(.system(size: 11.5, weight: .semibold)).foregroundStyle(Theme.dim)
                     Field(placeholder: "Title", text: $session.prep.title)
-                    if session.prep.calendarTitle != nil {
-                        HStack(spacing: 5) {
-                            Image(systemName: "calendar").font(.system(size: 10))
-                            Text("From your calendar\(session.prep.attendees.isEmpty ? "" : " · \(session.prep.attendees.count) people")\(session.prep.calendarNotes.isEmpty ? "" : " · invite notes included")")
-                        }
-                        .font(.system(size: 10.5)).foregroundStyle(Theme.faint)
-                    }
                     Field(placeholder: session.prep.mode.goalHint, text: $session.prep.goal)
                     ZStack(alignment: .topLeading) {
                         if session.prep.context.isEmpty {

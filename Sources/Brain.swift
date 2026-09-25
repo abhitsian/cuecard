@@ -701,15 +701,23 @@ final class Brain {
         <transcript>
         \(transcript)
         </transcript>
-        Write the notes with exactly these headings:
+        First line exactly: "Title: " and a 3 to 8 word name for what this meeting was actually about, from the \
+        transcript (not the current title, which may be a placeholder).
+        Then write the notes with exactly these headings:
         \(m.mode.recapSections)
         """
         var text = ""
         do {
             try await claude.stream(model: model, system: Prompts.recap, prompt: prompt) { fragment in
                 text += fragment
-                let snapshot = Brain.plain(text)
+                let snapshot = Brain.plain(Brain.withoutTitle(text).body)
                 DispatchQueue.main.async { m.recap = snapshot }
+            }
+            if let title = Brain.withoutTitle(text).title {
+                await MainActor.run {
+                    if !m.userTitled { m.title = title }
+                    Log.write("recap title: \(title)\(m.userTitled ? " (kept the typed title)" : "")")
+                }
             }
         } catch {
             Log.write("recap: \(error.localizedDescription)")
@@ -718,6 +726,16 @@ final class Brain {
     }
 
     // MARK: Helpers
+
+    /// Splits a leading "Title: …" line off a recap.
+    static func withoutTitle(_ text: String) -> (title: String?, body: String) {
+        let trimmed = text.drop { $0 == "\n" || $0 == " " }
+        guard trimmed.hasPrefix("Title:") else { return (nil, text) }
+        guard let end = trimmed.firstIndex(of: "\n") else { return (nil, "") } // still streaming the title line
+        let title = trimmed[trimmed.index(trimmed.startIndex, offsetBy: 6)..<end]
+            .trimmingCharacters(in: .whitespaces.union(CharacterSet(charactersIn: "\"*.")))
+        return (title.isEmpty ? nil : title, String(trimmed[trimmed.index(after: end)...]))
+    }
 
     /// House style: no em dashes, whatever the model did.
     static func plain(_ text: String) -> String {

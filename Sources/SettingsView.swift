@@ -33,7 +33,6 @@ struct SettingsView: View {
             Section("Listening") {
                 Toggle("Hear the other side (the Mac's audio)", isOn: $prefs.systemAudio)
                 Toggle("Offer to listen when a call starts", isOn: $prefs.detectMeetings)
-                Toggle("Use the calendar for meeting context", isOn: $prefs.useCalendar)
                 Toggle("Hide the panel from screen sharing", isOn: $prefs.hideFromSharing)
                 Toggle("Open at login", isOn: $login).onChange(of: login) { prefs.launchAtLogin = login }
             }
