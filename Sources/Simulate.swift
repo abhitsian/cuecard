@@ -87,7 +87,8 @@ enum Simulate {
         let mode = Playbook.Mode(rawValue: value("--mode") ?? "") ?? .general
         let started = Date()
         Task {
-            let brief = await NotionContext.fetch(title: title, attendees: with, goal: value("--goal") ?? "", mode: mode)
+            let asOf = value("--as-of").flatMap { ISO8601DateFormatter().date(from: $0) } ?? Date()
+            let brief = await NotionContext.fetch(title: title, attendees: with, goal: value("--goal") ?? "", mode: mode, asOf: asOf)
             print(brief ?? "NONE")
             print(String(format: "\n[seconds=%.0f]", Date().timeIntervalSince(started)))
             exit(0)

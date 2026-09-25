@@ -15,13 +15,26 @@ enum NotionContext {
         "notion-convert-page-to-skill",
     ]
 
-    static func fetch(title: String, attendees: [String], goal: String, mode: Playbook.Mode) async -> String? {
+    /// The usable part of a reply: from the first section heading on. Nothing when the reply says NONE anywhere
+    /// on a line of its own, or has no sections (an explanation of why nothing was found is not context).
+    static func brief(from reply: String) -> String? {
+        let lines = reply.components(separatedBy: "\n")
+        if lines.contains(where: { $0.trimmingCharacters(in: .whitespaces).uppercased() == "NONE" }) { return nil }
+        guard let start = lines.firstIndex(where: { $0.hasPrefix("## ") }) else { return nil }
+        let body = lines[start...].joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return body.count > 40 ? body : nil
+    }
+
+    static func fetch(title: String, attendees: [String], goal: String, mode: Playbook.Mode, asOf: Date = Date()) async -> String? {
         guard let claude = ["\(NSHomeDirectory())/.local/bin/claude", "/opt/homebrew/bin/claude", "/usr/local/bin/claude"]
             .first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else { return nil }
         let prompt = """
         The user is about to be in a meeting and wants the context they already have in Notion, so they can ask \
         better questions. Search their Notion (task tracker, meeting notes, project and workstream pages) for what \
         relates to this meeting. Read the few most relevant pages. Do not create or change anything.
+
+        The meeting starts \(asOf.formatted(date: .complete, time: .shortened)). Use only what was known before then: \
+        ignore any notes, recaps or pages about this meeting itself.
 
         Meeting: \(title)
         Type: \(mode.label)
@@ -60,9 +73,7 @@ enum NotionContext {
                     process.waitUntilExit()
                     let text = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                     Log.write("notion: \(process.terminationStatus) \(text.count) chars in \(Int(Date().timeIntervalSince(started)))s")
-                    let useful = process.terminationStatus == 0 && text.count > 40 && !text.uppercased().hasPrefix("NONE")
-                        && !text.lowercased().hasPrefix("i don't have permission") && !text.lowercased().hasPrefix("i need permission")
-                    done.resume(returning: useful ? "\(marker)\n\(text)" : nil)
+                    done.resume(returning: process.terminationStatus == 0 ? brief(from: text).map { "\(marker)\n\($0)" } : nil)
                 } catch {
                     Log.write("notion: \(error)")
                     done.resume(returning: nil)

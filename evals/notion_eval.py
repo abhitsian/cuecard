@@ -20,6 +20,12 @@ Checks (thresholds fixed before the first run):
   U3 faithful     judge  of those, the fact is stated as the brief states it        >= 90%
 The judge is Claude Sonnet through `claude -p`, the same model family that writes the questions, so U2/U3
 measure agreement with the brief, not ground truth. Calibrate it: label judge_sample.csv and compare.
+
+Changes after the first run (2026-09-25), recorded because they came after seeing results:
+- Cases carry their start time and the lookup ignores later Notion pages; the first run found each past
+  meeting's own recap in Notion, which inflated uptake.
+- The U3 judge failed open questions about things the brief doesn't cover; it now fails only a contradiction.
+  Thresholds unchanged.
 """
 import concurrent.futures as cf, csv, json, random, re, subprocess, sys, tempfile, time
 from pathlib import Path
@@ -47,6 +53,8 @@ def fetch(case):
     cmd = [str(APP), "--notion", case["title"], "--mode", case["mode"]]
     if case["with"]:
         cmd += ["--with", ", ".join(case["with"])]
+    if case.get("start"):
+        cmd += ["--as-of", case["start"]]  # past meetings: ignore Notion pages written after they happened
     start = time.time()
     out = run(cmd, 300)
     seconds = time.time() - start
@@ -153,8 +161,9 @@ For each question answer two things.
 uses_notion: does the question rely on a specific fact (a task, decision, date, owner, number, prior meeting)
 that appears in the Notion brief and does NOT appear in the transcript or title? Generic questions that could
 be asked without the brief are false.
-faithful: only when uses_notion is true, is that fact stated or implied consistently with the brief (no wrong
-owner, date, status or number)? Otherwise null.
+faithful: only when uses_notion is true. False only if the question states or implies something that
+CONTRADICTS the brief (a wrong owner, date, status or number). Asking about something the brief doesn't cover is
+faithful. Otherwise null.
 
 Questions:
 {listing}
