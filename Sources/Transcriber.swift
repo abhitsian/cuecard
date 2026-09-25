@@ -18,6 +18,8 @@ final class Transcriber {
     private(set) var buffers = 0
     private(set) var results = 0
     private(set) var lastLoud = Date.distantPast
+    /// Buffers loud enough to be speech (peak over 0.1), so the stall check ignores clicks and room noise.
+    private(set) var speechBuffers = 0
     private(set) var lastResult = Date()
     private var locale: Locale?
     private var vocabulary: [String] = []
@@ -110,6 +112,7 @@ final class Transcriber {
         level = max(peak, level * 0.85)
         buffers += 1
         if peak > 0.02 { heardAnything = true; lastLoud = Date() }
+        if peak > 0.1 { speechBuffers += 1 }
         feed.lock(); defer { feed.unlock() }
         guard !paused, let format, let continuation else { return }
         if inputFormat != buffer.format {

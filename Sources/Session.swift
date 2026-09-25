@@ -51,7 +51,7 @@ final class Session: ObservableObject {
     /// The stall check: buffer and result counts at the last look, and when each side was last restarted.
     private var lastCheck = Date()
     private var lastHealthLog = Date()
-    private var seen: [Speaker: (buffers: Int, results: Int)] = [:]
+    private var seen: [Speaker: (buffers: Int, results: Int, speech: Int)] = [:]
     private var lastRestart: [Speaker: Date] = [:]
 
     /// Asks the app to show the panel (a SAY card arrived, or the user started).
@@ -304,9 +304,10 @@ final class Session: ObservableObject {
         var report: [String] = []
         for (speaker, t) in [(Speaker.you, you), (Speaker.them, them)] {
             guard let t else { continue }
-            let before = seen[speaker] ?? (0, 0)
+            let before = seen[speaker] ?? (0, 0, 0)
             let newBuffers = t.buffers - before.buffers, newResults = t.results - before.results
-            seen[speaker] = (t.buffers, t.results)
+            let talking = newBuffers > 0 && Double(t.speechBuffers - before.speech) / Double(newBuffers) >= 0.25
+            seen[speaker] = (t.buffers, t.results, t.speechBuffers)
             report.append("\(speaker.rawValue) buffers+\(newBuffers) results+\(newResults) loud \(Int(now.timeIntervalSince(t.lastLoud)))s ago text \(Int(now.timeIntervalSince(t.lastResult)))s ago")
             guard m.phase == .listening, speaker == .you || m.hearsThem,
                   now.timeIntervalSince(lastRestart[speaker] ?? .distantPast) > 60 else { continue }
@@ -315,7 +316,7 @@ final class Session: ObservableObject {
                 lastRestart[speaker] = now
                 if speaker == .you { mic?.restart() } else if let tap { tap.stop(); try? tap.start() }
                 m.notice = "Lost \(speaker == .you ? "your microphone" : "the other side's audio") for a moment; reconnected."
-            } else if now.timeIntervalSince(t.lastLoud) < 15, now.timeIntervalSince(t.lastResult) > 45 {
+            } else if talking, now.timeIntervalSince(t.lastResult) > 45 {
                 Log.write("health \(speaker.rawValue): sound but no text for \(Int(now.timeIntervalSince(t.lastResult)))s, restarting speech")
                 lastRestart[speaker] = now
                 Task { await t.restart() }
