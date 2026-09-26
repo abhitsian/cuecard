@@ -2,6 +2,14 @@
 
 A menu-bar meeting copilot for macOS 26. It listens with you and, while the meeting is happening, shows what to say, what to ask and what to write down.
 
+[![Cuecard meeting board demo: transcript on the left, decisions, tasks, questions and risks filling in on the right](docs/demo-poster.jpg)](docs/cuecard-demo.mp4)
+
+**[▶ Watch the 60-second demo](docs/cuecard-demo.mp4)**: a fictional meeting run live through the real app.
+
+- **Jev** judges every turn of the conversation in about 0.4 s: is this a commitment, a decision, an open question, a risk, something asked of you? Plain code files what scores 0.7 or more into Decisions, Tasks, Questions or Risks, and ticks a question off when a later turn answers it.
+- **Claude** writes only when words are needed: what to say when you're asked, a follow-up when an answer is vague, clean wording for what was captured, and the recap afterwards.
+- Everything on screen in the demo came from that run: each verdict's score and latency, and every card Claude wrote. The meeting is scripted (clean text, no speech recognition) and plays at 1.5× speed.
+
 ## How it works
 
 | Layer | What does it | Speed |
