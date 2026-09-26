@@ -52,9 +52,13 @@ With the Notion connector in your Claude Code login, Cuecard can read your Notio
 
 `defaults write com.vaibhav.cuecard afterWriteUp "/path/to/script"` runs that command with the saved note's path once each recap is written (for example, to file it into a notes app).
 
+## Meeting board
+
+Menu → Open meeting board (⌘B) opens a wide window beside the panel: the transcript with Jev's verdict under each turn (how long it took, which box it filed to), a 2×2 of Decisions, Tasks, Questions and Risks that fills as people talk (the words swirl from the sentence into their box; open questions tick themselves off when a later turn answers them), and Cues: what to ask or say next, marked "Jev picked" (from your prepared questions, with Jev's score) or "Claude wrote".
+
 ## Demo video
 
-`demo/launch-review.txt` is a fictional meeting. `Cuecard --demo-render demo/launch-review.txt demo/out 10 -name Sam -about "…"` plays it through the real pipeline (Jev judges each turn, Claude writes the suggestions) and saves the live panel as frames plus `events.json` with every verdict and its latency; the `-name`/`-about` launch arguments override your settings for that run only. `demo/video/build.py` turns that run into a HyperFrames composition (`npx hyperframes render` in `demo/video`). Every label and millisecond in the video comes from the run.
+`demo/launch-review.txt` is a fictional meeting. `Cuecard --demo-render demo/launch-review.txt demo/out 10 -name Sam -about "…"` plays it through the real pipeline (Jev judges each turn, Claude writes the suggestions) and saves the live panel as frames plus `events.json` with every verdict and its latency; the `-name`/`-about` launch arguments override your settings for that run only. With `DEMO_VIEW=board` it records the meeting board instead (snapshots at 30 fps, drawn after the run). `demo/video/build_board.py` (board) and `demo/video/build.py` (panel) turn a run into a HyperFrames composition (`npx hyperframes render` in `demo/video`). Every label and millisecond in the video comes from the run.
 
 ## Build
 

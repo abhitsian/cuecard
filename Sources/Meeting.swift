@@ -11,6 +11,18 @@ struct Line: Identifiable, Equatable {
     let speaker: Speaker
     var text: String
     let at: Date
+    /// A display name when one is known (the demo script names its speakers); otherwise You / Them.
+    var name: String? = nil
+}
+
+/// One Jev verdict on a turn: what it scored at 0.5 or above, and how long Jev took.
+struct Judgement: Identifiable, Equatable {
+    let id = UUID()
+    let speaker: Speaker
+    let text: String
+    let scores: [String: Double]
+    let ms: Int
+    let at: Date
 }
 
 /// Everything Cuecard shows is a card. Suggestions (say, ask, answer) live on the Live tab; captures (action,
@@ -107,6 +119,8 @@ struct Card: Identifiable, Equatable {
     var resolved: String?
     /// Waiting for Claude to tidy the wording.
     var refining = false
+    /// Jev's confidence when Jev put it here (a capture's category score, or how well a prepared question fits).
+    var score: Double?
 }
 
 /// One question prepared before the meeting (or written live and kept for later).
@@ -136,7 +150,11 @@ final class Meeting: ObservableObject {
     @Published var phase: Phase = .listening
     @Published var lines: [Line] = []
     @Published var partial: [Speaker: String] = [:]
+    /// Who is speaking the partial line, when known (the demo names its speakers).
+    @Published var partialNames: [Speaker: String] = [:]
     @Published var cards: [Card] = []
+    /// Every Jev verdict, for the board: which turn, what it scored, how long it took.
+    @Published var judgements: [Judgement] = []
     @Published var bank: [BankQuestion] = []
     /// The answer structures being graded, and where the answer stands on each step ("frame.node" → state).
     @Published var frames: [Frame] = []

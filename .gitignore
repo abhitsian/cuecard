@@ -3,7 +3,10 @@ build/
 .DS_Store
 node_modules/
 demo/out/
+demo/board/
+demo/board.mp4
 demo/video/renders/
 demo/video/panel.mp4
+demo/video/board.mp4
 demo/video/.media/
 demo/video/.hyperframes/

@@ -60,6 +60,21 @@ enum Demo {
         var seenCards: [UUID: String] = [:]
         var frame = 0
         var recording = false
+        // The board is drawn after the run from snapshots taken at 30 fps: drawing it live is slower than real
+        // time. Everything on it is worked out from the meeting's state and the clock, so this is exact.
+        let board = ProcessInfo.processInfo.environment["DEMO_VIEW"] == "board"
+        struct Snapshot { let at: Date; let lines: [Line]; let partial: [Speaker: String]; let names: [Speaker: String]
+                          let cards: [Card]; let judgements: [Judgement]; let you: Float; let them: Float }
+        var snapshots: [Snapshot] = []
+        if board {
+            Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { _ in
+                MainActor.assumeIsolated {
+                    guard recording else { return }
+                    snapshots.append(Snapshot(at: Date(), lines: meeting.lines, partial: meeting.partial, names: meeting.partialNames,
+                                              cards: meeting.cards, judgements: meeting.judgements, you: meeting.youLevel, them: meeting.themLevel))
+                }
+            }
+        }
         func snapshot() {
             for card in meeting.cards {
                 let state = "\(card.text)|\(card.resolved != nil)|\(card.done)"
@@ -70,15 +85,21 @@ enum Demo {
                     seenCards[card.id] = state
                 }
             }
-            guard recording else { return }
-            let view = ZStack {
-                RoundedRectangle(cornerRadius: 16).fill(Color(red: 0.11, green: 0.115, blue: 0.13))
-                PanelView().environmentObject(session).environmentObject(Prefs.shared)
+            guard recording, !board else { return }
+            let view = Group {
+                if board {
+                    BoardView().environmentObject(session).environmentObject(Prefs.shared).frame(width: 1920, height: 1080)
+                } else {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16).fill(Color(red: 0.11, green: 0.115, blue: 0.13))
+                        PanelView().environmentObject(session).environmentObject(Prefs.shared)
+                    }
+                    .frame(width: 384, height: height)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
             }
-            .frame(width: 384, height: height)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
             let renderer = ImageRenderer(content: view)
-            renderer.scale = 2
+            renderer.scale = board ? 1 : 2
             if let image = renderer.nsImage, let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
                let png = rep.representation(using: .png, properties: [:]) {
                 try? png.write(to: folder.appendingPathComponent(String(format: "frame-%05d.png", frame)))
@@ -93,6 +114,24 @@ enum Demo {
                 meeting.youLevel = 0; meeting.themLevel = 0
                 DispatchQueue.main.asyncAfter(deadline: .now() + 14) {
                     snapshot()
+                    recording = false
+                    if board {
+                        let replay = Meeting(title: meeting.title, mode: meeting.mode, goal: "", context: "", started: meeting.started)
+                        replay.hearsThem = true
+                        for (n, s) in snapshots.enumerated() {
+                            replay.lines = s.lines; replay.partial = s.partial; replay.partialNames = s.names
+                            replay.cards = s.cards; replay.judgements = s.judgements; replay.youLevel = s.you; replay.themLevel = s.them
+                            replay.ended = s.at  // the header clock reads the snapshot's moment
+                            let view = BoardContent(meeting: replay, now: s.at).background(BoardStyle.bg).frame(width: 1920, height: 1080)
+                            let renderer = ImageRenderer(content: view)
+                            renderer.scale = 1
+                            if let image = renderer.nsImage, let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
+                               let png = rep.representation(using: .png, properties: [:]) {
+                                try? png.write(to: folder.appendingPathComponent(String(format: "frame-%05d.png", n)))
+                                frame = n + 1
+                            }
+                        }
+                    }
                     let encoder = JSONEncoder()
                     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
                     try? encoder.encode(events).write(to: folder.appendingPathComponent("events.json"))
@@ -111,13 +150,14 @@ enum Demo {
             for i in 1...words.count {
                 DispatchQueue.main.asyncAfter(deadline: .now() + duration * Double(i) / Double(words.count)) {
                     meeting.partial[speaker] = words.prefix(i).joined(separator: " ")
+                    meeting.partialNames[speaker] = name
                     let level: Float = 0.35 + 0.3 * Float((i * 7919) % 10) / 10
                     if speaker == .you { meeting.youLevel = level; meeting.themLevel = 0.04 } else { meeting.themLevel = level; meeting.youLevel = 0.04 }
                 }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.25) {
                 meeting.partial[speaker] = nil
-                let line = Line(speaker: speaker, text: text, at: Date())
+                let line = Line(speaker: speaker, text: text, at: Date(), name: name)
                 meeting.add(line)
                 brain.heard(line)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { speak() }

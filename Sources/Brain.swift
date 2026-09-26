@@ -158,6 +158,7 @@ final class Brain {
         await MainActor.run {
             if let answers {
                 let scores = answers.answers.compactMapValues(\.noul).filter { $0.value >= 0.5 }
+                self.meeting.judgements.append(Judgement(speaker: speaker, text: text, scores: scores, ms: Int(judgedIn * 1000), at: Date()))
                 self.onJudged?(speaker, text, scores, judgedIn)
             }
             if let answers { self.apply(answers.answers, speaker: speaker, text: text, sentences: sentences, open: open.map(\.0)) }
@@ -208,7 +209,9 @@ final class Brain {
             ("commit", p("action_item"), { Card(kind: .action, text: sentence("s_action"), owner: owner, due: Brain.due(in: sentence("s_action")), quote: sentence("s_action"), source: "Jev") }),
             ("commit", p("next_step") - 0.05, { Card(kind: .nextStep, text: text, due: Brain.due(in: text), quote: text, source: "Jev") }),
             ("decision", p("decision"), { Card(kind: .decision, text: sentence("s_decision"), quote: sentence("s_decision"), source: "Jev") }),
-            ("question", speaker == .them && p("asked_you") < 0.7 ? p("open_question") : 0, { Card(kind: .question, text: sentence("s_question"), quote: sentence("s_question"), source: "Jev") }),
+            // An open question counts whoever raised it, including one put to the user: it stays open until a
+            // later turn answers it (Jev's `resolves`), which is what makes it worth tracking.
+            ("question", p("open_question"), { Card(kind: .question, text: sentence("s_question"), quote: sentence("s_question"), source: "Jev") }),
             ("risk", p("risk") - 0.02, { Card(kind: .risk, text: text, quote: text, source: "Jev") }),
             ("fact", text.hasSuffix("?") ? 0 : p("key_fact") - 0.12, { Card(kind: .fact, text: text, quote: text, source: "Jev") }),
         ]
@@ -219,7 +222,9 @@ final class Brain {
             let kind = c.make().kind
             let category: Playbook.Category = [.action: .action, .nextStep: .nextStep, .decision: .decision, .question: .openQuestion, .risk: .risk][kind] ?? .fact
             guard allowed.contains(category) else { continue }
-            capture(c.make())
+            var card = c.make()
+            card.score = c.p
+            capture(card)
             families.insert(c.family)
             taken += 1
         }
@@ -251,7 +256,7 @@ final class Brain {
                   question.surfacedAt.map({ Date().timeIntervalSince($0) > 240 }) ?? true else { return }
             meeting.bank = meeting.bank.map { var q = $0; if q.id == question.id { q.surfacedAt = Date() }; return q }
             let source = question.live ? "Asked earlier" : "From your prep · \(question.topic)"
-            if meeting.add(Card(kind: .ask, text: question.text, source: source)) != nil {
+            if meeting.add(Card(kind: .ask, text: question.text, source: source, score: probability)) != nil {
                 lastAskShown = Date()
                 turnsSinceAsk = 0
             }

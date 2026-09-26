@@ -75,6 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             DispatchQueue.main.async { NSWorkspace.shared.open(FileManager.default.fileExists(atPath: page.path) ? page : note) }
         }
     }
+    @objc func openBoard() { BoardWindow.shared.show(session: session) }
     @objc func openLibrary() {
         DispatchQueue.global(qos: .userInitiated).async {
             let url = Pages.rebuild()
@@ -187,6 +188,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         sub.addItem(.separator())
         sub.addItem(item("Open meetings folder", #selector(openFolder)))
         recent.submenu = sub
+        menu.addItem(item("Open meeting board", #selector(openBoard), key: "b"))
         menu.addItem(item("Open meetings library", #selector(openLibrary), key: "l"))
         menu.addItem(recent)
         menu.addItem(.separator())
