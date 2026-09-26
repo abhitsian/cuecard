@@ -113,21 +113,29 @@ final class Session: ObservableObject {
     /// The brief replaces the previous one in the meeting's context (every suggestion reads it), and a few
     /// questions from it go into the bank.
     private func notionCheck(_ m: Meeting) {
-        guard Prefs.shared.notionContext, !m.notionBusy, m.phase == .listening, m.notionLookups < 2 else { return }
+        guard Prefs.shared.notionContext, !m.notionBusy, m.phase == .listening, m.notionLookups < 6 else { return }
         let elapsed = Date().timeIntervalSince(m.started)
         let words = m.lines.reduce(0) { $0 + $1.text.split(separator: " ").count }
-        let due = m.notionLookups == 0 ? (elapsed > 150 && words > 120) : elapsed > 720
+        let sinceLast = m.lastLookup.map { Date().timeIntervalSince($0) } ?? .infinity
+        // First look once there is enough to go on; after that, when Jev says the talk moved to a new subject
+        // (at most every 3 minutes), with a 15-minute refresh in case it never clearly does.
+        let due = m.notionLookups == 0 ? (elapsed > 150 && words > 120)
+            : (m.topicShifted && sinceLast > 180) || sinceLast > 900
         guard due else { return }
+        let reason = m.notionLookups == 0 ? "first" : (m.topicShifted ? "topic changed" : "refresh")
+        m.topicShifted = false
+        m.lastLookup = Date()
         m.notionBusy = true
         m.notionLookups += 1
         let round = m.notionLookups
         let transcript = m.transcript(limit: 80)
-        Log.write("notion: lookup \(round) at \(m.elapsed), \(words) words said")
+        Log.write("notion: lookup \(round) (\(reason)) at \(m.elapsed), \(words) words said")
         Task { @MainActor in
             let found = await NotionContext.fetch(transcript: transcript, title: m.userTitled ? m.title : "", goal: m.goal,
                                                   mode: m.mode, asOf: m.started)
             m.notionBusy = false
-            if let topic = found.topic, !m.userTitled {
+            if let topic = found.topic { m.lookupTopic = topic }
+            if let topic = found.topic, !m.userTitled, round == 1 {
                 Log.write("title: \(topic)")
                 m.title = topic
             }

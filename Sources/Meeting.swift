@@ -143,6 +143,11 @@ final class Meeting: ObservableObject {
     /// Notion lookups done during this meeting (they run a few minutes in, and again later).
     var notionLookups = 0
     var notionBusy = false
+    /// What the last lookup found the meeting to be about, and when it ran. Jev checks every turn for a move to a
+    /// different topic, which triggers a fresh lookup.
+    var lookupTopic: String?
+    var lastLookup: Date?
+    var topicShifted = false
     @Published var mode: Playbook.Mode
     @Published var goal: String
     @Published var context: String

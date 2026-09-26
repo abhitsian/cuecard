@@ -111,14 +111,15 @@ final class Brain {
     private func judge(_ speaker: Speaker, _ lines: [Line], before: [Line], jev: Jev.Client) async {
         let text = lines.map(\.text).joined(separator: " ")
         let sentences = lines.map(\.text)
-        let (open, bankItems, attendees) = await MainActor.run {
+        let (open, bankItems, attendees, lookupTopic) = await MainActor.run {
             (meeting.openQuestions.prefix(12).map { ($0.id, $0.text) },
              meeting.bank.filter { !$0.asked }.prefix(40).map { ($0.id, $0.text) },
-             meeting.attendees)
+             meeting.attendees, meeting.lookupTopic)
         }
         let mode = meeting.mode
         var state: [String: Any] = [
-            "meeting": ["type": "\(mode.label). \(mode.blurb)", "user": prefs.name, "attendees": attendees],
+            "meeting": ["type": "\(mode.label). \(mode.blurb)", "user": prefs.name, "attendees": attendees,
+                        "topic": lookupTopic ?? ""],
             "recent": before.map { "\($0.speaker.rawValue): \($0.text)" },
             "latest": ["speaker": speaker.rawValue, "text": text, "sentences": sentences],
         ]
@@ -128,6 +129,10 @@ final class Brain {
         }
         questions["vague"] = .noul(Playbook.vagueQuestion)
         questions["filler"] = .noul(Playbook.fillerQuestion)
+        // Once context has been looked up for a topic, notice when the conversation leaves it.
+        if lookupTopic != nil {
+            questions["topic_shift"] = .noul("Does `latest.text` move the conversation to a different subject from `meeting.topic`: a new project, problem, customer or decision, not a continuation or detail of the same subject?")
+        }
         if speaker == .them {
             for signal in mode.signals { questions["sig_" + signal.key] = .noul(signal.question) }
         }
@@ -159,6 +164,10 @@ final class Brain {
             if let answers {
                 let scores = answers.answers.compactMapValues(\.noul).filter { $0.value >= 0.5 }
                 self.meeting.judgements.append(Judgement(speaker: speaker, text: text, scores: scores, ms: Int(judgedIn * 1000), at: Date()))
+                if (scores["topic_shift"] ?? 0) >= 0.8, text.split(separator: " ").count >= 8 {
+                    Log.write("topic: shift \(String(format: "%.2f", scores["topic_shift"] ?? 0)) from \"\(lookupTopic ?? "")\" | \(text.prefix(80))")
+                    self.meeting.topicShifted = true
+                }
                 self.onJudged?(speaker, text, scores, judgedIn)
             }
             if let answers { self.apply(answers.answers, speaker: speaker, text: text, sentences: sentences, open: open.map(\.0)) }
