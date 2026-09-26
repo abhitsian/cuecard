@@ -37,9 +37,15 @@ final class Prefs: ObservableObject {
     @Published var autoSuggest: Bool { didSet { store.set(autoSuggest, forKey: "autoSuggest") } }
     @Published var detectMeetings: Bool { didSet { store.set(detectMeetings, forKey: "detectMeetings") } }
     @Published var hideFromSharing: Bool { didSet { store.set(hideFromSharing, forKey: "hideFromSharing") } }
-    /// Pull context from Notion (through the Claude Code Notion connector) when a meeting starts.
+    /// Look up context from the user's sources during meetings (see ContextSources).
     @Published var notionContext: Bool { didSet { store.set(notionContext, forKey: "notionContext") } }
     @Published var useJev: Bool { didSet { store.set(useJev, forKey: "useJev") } }
+    /// MCP servers from the user's Claude Code setup that meeting lookups may search (read tools only).
+    @Published var contextSources: [String] { didSet { store.set(contextSources, forKey: "contextSources") } }
+    /// Each chosen server's read-only tools, listed on first use.
+    @Published var sourceTools: [String: [String]] { didSet { store.set(sourceTools, forKey: "sourceTools") } }
+    /// A local folder of notes (an Obsidian vault, a notes directory) that lookups may read.
+    @Published var contextFolder: String { didSet { store.set(contextFolder, forKey: "contextFolder") } }
     @Published var popOnAsk: Bool { didSet { store.set(popOnAsk, forKey: "popOnAsk") } }
 
     private init() {
@@ -53,6 +59,9 @@ final class Prefs: ObservableObject {
         hideFromSharing = store.object(forKey: "hideFromSharing") as? Bool ?? true
         notionContext = store.object(forKey: "notionContext") as? Bool ?? true
         useJev = store.object(forKey: "useJev") as? Bool ?? true
+        contextSources = store.stringArray(forKey: "contextSources") ?? ["claude.ai Notion"]
+        sourceTools = store.dictionary(forKey: "sourceTools") as? [String: [String]] ?? [:]
+        contextFolder = store.string(forKey: "contextFolder") ?? ""
         popOnAsk = store.object(forKey: "popOnAsk") as? Bool ?? true
     }
 

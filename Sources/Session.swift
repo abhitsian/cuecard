@@ -18,7 +18,7 @@ final class Session: ObservableObject {
         var attendees: [String] = []
         var bank: [BankQuestion] = []
         var preparing = false
-        /// Looking in Notion, and what came of the last look.
+        /// Looking in the user's sources, and what came of the last look.
         var fetchingNotion = false
         var notionNote: String?
         /// Answer structures to grade live (frame ids).
@@ -87,12 +87,12 @@ final class Session: ObservableObject {
         }
     }
 
-    /// Adds what Notion knows to the context box, from what the user typed (title, goal, notes). There is no
+    /// Adds what the user's sources know to the context box, from what the user typed (title, goal, notes). There is no
     /// transcript yet, so this needs something typed; during the meeting the lookup runs on what is said.
     func pullFromNotion() {
         guard !prep.fetchingNotion else { return }
         guard !(prep.title.isEmpty && prep.goal.isEmpty && prep.context.isEmpty) else {
-            prep.notionNote = "Type a title, goal or notes first. During the meeting Cuecard looks up Notion from what is said."
+            prep.notionNote = "Type a title, goal or notes first. During the meeting Cuecard looks up your sources from what is said."
             return
         }
         prep.fetchingNotion = true
@@ -101,10 +101,10 @@ final class Session: ObservableObject {
         Task { @MainActor in
             let found = await NotionContext.fetch(transcript: "", title: p.title, goal: p.goal, notes: p.context, mode: p.mode)
             self.prep.fetchingNotion = false
-            guard let brief = found.brief else { self.prep.notionNote = "Nothing relevant found in Notion."; return }
-            self.prep.context = self.prep.context.replacingOccurrences(of: NotionContext.marker, with: "[Notion, earlier]")
+            guard let brief = found.brief else { self.prep.notionNote = "Nothing relevant found in your sources."; return }
+            self.prep.context = self.prep.context.replacingOccurrences(of: NotionContext.marker, with: "[Sources, earlier]")
             self.prep.context += (self.prep.context.isEmpty ? "" : "\n\n") + brief
-            self.prep.notionNote = "Added from Notion. Prepare writes questions from it."
+            self.prep.notionNote = "Added from your sources. Prepare writes questions from it."
         }
     }
 
@@ -135,13 +135,13 @@ final class Session: ObservableObject {
             if let old = m.context.range(of: NotionContext.marker) { m.context = String(m.context[..<old.lowerBound]) }
             m.context = m.context.trimmingCharacters(in: .whitespacesAndNewlines)
             m.context += (m.context.isEmpty ? "" : "\n\n") + brief
-            m.notice = "Pulled context from Notion. Questions from it are under Questions."
-            DispatchQueue.main.asyncAfter(deadline: .now() + 8) { if m.notice?.hasPrefix("Pulled context from Notion") == true { m.notice = nil } }
+            m.notice = "Pulled context from your sources. Questions from it are under Questions."
+            DispatchQueue.main.asyncAfter(deadline: .now() + 8) { if m.notice?.hasPrefix("Pulled context from your sources") == true { m.notice = nil } }
             var added = 0
             await Brain.writeBank(mode: m.mode, title: m.title, goal: m.goal, context: brief, attendees: m.attendees) { q in
                 guard added < (round == 1 ? 5 : 3), !m.bank.contains(where: { $0.text == q.text }) else { return }
                 var q = q
-                q.topic = "Notion · " + q.topic
+                q.topic = "Your sources · " + q.topic
                 m.bank.append(q)
                 added += 1
             }
@@ -150,13 +150,20 @@ final class Session: ObservableObject {
 
     /// Adds a document (PDF, Word, text) to the context box.
     func addFile() {
+        for (name, text) in Session.pickFiles() {
+            prep.context += (prep.context.isEmpty ? "" : "\n\n") + "[\(name)]\n\(text)"
+        }
+    }
+
+    /// Files the user picks (PDF, Word, text, Markdown, HTML), as (file name, text up to 20k characters).
+    static func pickFiles() -> [(String, String)] {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.allowedContentTypes = [.pdf, .plainText, .rtf, UTType(filenameExtension: "md") ?? .plainText,
                                      UTType(filenameExtension: "docx") ?? .data, .html]
         NSApp.activate(ignoringOtherApps: true)
-        guard panel.runModal() == .OK else { return }
-        for url in panel.urls {
+        guard panel.runModal() == .OK else { return [] }
+        return panel.urls.compactMap { url in
             var text: String?
             if url.pathExtension.lowercased() == "pdf" {
                 text = PDFDocument(url: url)?.string
@@ -165,10 +172,34 @@ final class Session: ObservableObject {
             } else {
                 text = (try? NSAttributedString(url: url, options: [:], documentAttributes: nil))?.string
             }
-            guard let text, !text.isEmpty else { continue }
-            let trimmed = String(text.prefix(20000)).trimmingCharacters(in: .whitespacesAndNewlines)
-            prep.context += (prep.context.isEmpty ? "" : "\n\n") + "[\(url.lastPathComponent)]\n\(trimmed)"
+            guard let text, !text.isEmpty else { return nil }
+            return (url.lastPathComponent, String(text.prefix(20000)).trimmingCharacters(in: .whitespacesAndNewlines))
         }
+    }
+
+    /// Context the user adds during the meeting (a pasted note, numbers, a doc): it joins what every suggestion
+    /// reads, and a few questions are written from it into the bank.
+    func addContext(_ text: String, label: String = "Added during the meeting") {
+        let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let m = meeting, !body.isEmpty else { return }
+        m.context += (m.context.isEmpty ? "" : "\n\n") + "[\(label)]\n\(String(body.prefix(20000)))"
+        m.notice = "Added to this meeting's context. Suggestions use it from now on."
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6) { if m.notice?.hasPrefix("Added to this meeting's context") == true { m.notice = nil } }
+        Log.write("context: added \(body.count) chars (\(label))")
+        Task { @MainActor in
+            var added = 0
+            await Brain.writeBank(mode: m.mode, title: m.title, goal: m.goal, context: body, attendees: m.attendees) { q in
+                guard added < 3, !m.bank.contains(where: { $0.text == q.text }) else { return }
+                var q = q
+                q.topic = "Your context · " + q.topic
+                m.bank.append(q)
+                added += 1
+            }
+        }
+    }
+
+    func addContextFile() {
+        for (name, text) in Session.pickFiles() { addContext(text, label: name) }
     }
 
     // MARK: Listening

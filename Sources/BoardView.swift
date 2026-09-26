@@ -112,15 +112,25 @@ struct BoardView: View {
 struct BoardContent: View {
     @ObservedObject var meeting: Meeting
     let now: Date
+    /// Just the transcript and the four boxes: no stats, no per-turn verdicts, no cues (for a simple demo).
+    var minimal = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            header
+            if minimal {
+                HStack(spacing: 14) {
+                    Circle().fill(Color(red: 1, green: 0.36, blue: 0.33)).frame(width: 14, height: 14)
+                    Text(meeting.title).font(.system(size: 34, weight: .bold)).foregroundStyle(BoardStyle.ink)
+                    Text(meeting.elapsed).font(.system(size: 26, weight: .medium).monospacedDigit()).foregroundStyle(BoardStyle.dim)
+                }
+            } else {
+                header
+            }
             HStack(alignment: .top, spacing: 30) {
                 transcript.frame(width: 700)
                 VStack(spacing: 22) {
                     grid
-                    cues
+                    if !minimal { cues }
                 }
             }
         }
@@ -196,7 +206,7 @@ struct BoardContent: View {
             Text(line.name ?? line.speaker.rawValue)
                 .font(.system(size: 20, weight: .bold)).foregroundStyle(line.speaker == .you ? BoardStyle.you : BoardStyle.them)
             Text(line.text).font(.system(size: 26)).foregroundStyle(BoardStyle.ink).fixedSize(horizontal: false, vertical: true)
-            if let verdict { verdictRow(verdict) }
+            if let verdict, !minimal { verdictRow(verdict) }
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -247,7 +257,7 @@ struct BoardContent: View {
             HStack(spacing: 18) { tile(.decisions); tile(.tasks) }
             HStack(spacing: 18) { tile(.questions); tile(.risks) }
         }
-        .frame(height: 640)
+        .frame(height: minimal ? 930 : 640)
     }
 
     private func tile(_ q: Quadrant) -> some View {
@@ -273,7 +283,7 @@ struct BoardContent: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(height: 311, alignment: .topLeading)
+        .frame(height: minimal ? 456 : 311, alignment: .topLeading)
         .background(RoundedRectangle(cornerRadius: 20).fill(q.color.opacity(0.07)))
         .overlay(RoundedRectangle(cornerRadius: 20).stroke(q.color.opacity(0.28), lineWidth: 1.5))
         .clipped()

@@ -122,7 +122,8 @@ enum Demo {
                             replay.lines = s.lines; replay.partial = s.partial; replay.partialNames = s.names
                             replay.cards = s.cards; replay.judgements = s.judgements; replay.youLevel = s.you; replay.themLevel = s.them
                             replay.ended = s.at  // the header clock reads the snapshot's moment
-                            let view = BoardContent(meeting: replay, now: s.at).background(BoardStyle.bg).frame(width: 1920, height: 1080)
+                            let minimal = ProcessInfo.processInfo.environment["DEMO_MINIMAL"] == "1"
+                            let view = BoardContent(meeting: replay, now: s.at, minimal: minimal).background(BoardStyle.bg).frame(width: 1920, height: 1080)
                             let renderer = ImageRenderer(content: view)
                             renderer.scale = 1
                             if let image = renderer.nsImage, let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),

@@ -805,8 +805,29 @@ struct AskBar: View {
     @EnvironmentObject var session: Session
     @ObservedObject var meeting: Meeting
     @State private var text = ""
+    @State private var adding = false
+    @State private var note = ""
     var body: some View {
         HStack(spacing: 8) {
+            Button { adding.toggle() } label: { Image(systemName: "plus.circle").font(.system(size: 13)) }
+                .buttonStyle(.plain).foregroundStyle(Theme.dim)
+                .help("Add context: paste a note or attach a file; suggestions use it from now on")
+                .popover(isPresented: $adding, arrowEdge: .top) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Add context to this meeting").font(.system(size: 12, weight: .semibold))
+                        TextEditor(text: $note).font(.system(size: 12)).frame(width: 300, height: 120)
+                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.hairline))
+                        Text("A note, numbers, a doc excerpt. Suggestions use it from now on.")
+                            .font(.system(size: 10.5)).foregroundStyle(Theme.faint)
+                        HStack {
+                            Button("Attach a file…") { adding = false; session.addContextFile() }.buttonStyle(SmallButtonStyle())
+                            Spacer()
+                            Button("Add") { session.addContext(note); note = ""; adding = false }
+                                .buttonStyle(SmallButtonStyle(prominent: true)).disabled(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                    .padding(12)
+                }
             Image(systemName: "sparkle").font(.system(size: 11)).foregroundStyle(Theme.accent)
             PlainField(placeholder: meeting.live ? "Ask Cuecard about this meeting…" : "Ask about this meeting…", text: $text)
                 .font(.system(size: 12.5))
@@ -875,8 +896,9 @@ struct PrepScreen: View {
                     HStack {
                         Button { session.addFile() } label: { Label("Add a file", systemImage: "paperclip") }.buttonStyle(SmallButtonStyle())
                         Button { session.pullFromNotion() } label: {
-                            Label(session.prep.fetchingNotion ? "Looking in Notion…" : "From Notion", systemImage: "book.closed")
+                            Label(session.prep.fetchingNotion ? "Looking…" : "From my sources", systemImage: "book.closed")
                         }.buttonStyle(SmallButtonStyle()).disabled(session.prep.fetchingNotion)
+                        .help("Search your connected sources and notes folder (Settings) for this meeting")
                         Spacer()
                         if !session.prep.context.isEmpty {
                             Text("\(session.prep.context.split(separator: " ").count) words").font(.system(size: 10.5)).foregroundStyle(Theme.faint)

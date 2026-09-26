@@ -209,7 +209,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(toggle("Offer to listen when a call starts", 3, prefs.detectMeetings))
         menu.addItem(toggle("Hide from screen sharing", 4, prefs.hideFromSharing))
         menu.addItem(toggle("Open at login", 5, prefs.launchAtLogin))
-        menu.addItem(toggle("Pull context from Notion at start", 6, prefs.notionContext))
+        menu.addItem(toggle("Look up context from my sources", 6, prefs.notionContext))
         let jev = NSMenuItem(title: prefs.useJev && prefs.jevKey != nil ? "Jev: on" : "Jev: off (keyword rules)", action: nil, keyEquivalent: "")
         jev.isEnabled = false
         menu.addItem(jev)

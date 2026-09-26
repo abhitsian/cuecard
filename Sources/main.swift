@@ -8,6 +8,19 @@ if let i = arguments.firstIndex(of: "--simulate"), arguments.count > i + 1 {
     _ = NSApplication.shared
     let fps = arguments.count > i + 3 ? Double(arguments[i + 3]) ?? 10 : 10
     MainActor.assumeIsolated { Demo.run(script: arguments[i + 1], out: arguments[i + 2], fps: fps) }
+} else if arguments.contains("--sources") {
+    // Lists the MCP servers in the Claude Code setup and the read-only tools Cuecard would allow for the chosen ones.
+    Task {
+        for server in await ContextSources.discover() {
+            print("\(Prefs.shared.contextSources.contains(server.name) ? "[x]" : "[ ]") \(server.name)\(server.connected ? "" : " (not connected)")")
+        }
+        for name in Prefs.shared.contextSources {
+            let tools = await ContextSources.readTools(for: ContextSources.Server(name: name, connected: true))
+            print("\n\(name): \(tools.count) read tools\n  " + tools.joined(separator: "\n  "))
+        }
+        exit(0)
+    }
+    RunLoop.main.run()
 } else if arguments.contains("--notion") {
     Simulate.notion(arguments)
 } else if let i = arguments.firstIndex(of: "--transcribe") {

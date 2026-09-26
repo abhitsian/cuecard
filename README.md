@@ -52,9 +52,23 @@ Permissions: Microphone and System Audio Recording (for the other side). Cuecard
 
 Every meeting gets a page at `~/Documents/Cuecard/pages/<note>.html`, built from its Markdown note: the recap, what was captured live, and the transcript with a You/Them filter and search. `~/Documents/Cuecard/index.html` lists them by day with a mode filter and search. Open it from the menu (Open meetings library, ⌘L), or Page on the panel once a recap is done. Pages for older notes are written on launch.
 
-## Notion context
+## Bring your own context
 
-With the Notion connector in your Claude Code login, Cuecard can read your Notion for the meeting you're in: open tasks, what was decided last time, background. **From Notion** on the prep screen puts it in the context box (so Prepare writes questions from it); if you skip that, it's fetched in the background when the meeting starts, added to the context every suggestion reads, and up to five questions from it land under Questions tagged "Notion". It only reads: every Notion write tool is blocked. Turn it off in the menu (Pull context from Notion at start). It takes a minute or two.
+Cuecard's cues are only as good as what it knows about your work. There are four ways to give it that:
+
+| When | How | What happens |
+|---|---|---|
+| Before the meeting | Type or paste into the context box on the prep screen, or **Add a file** (PDF, Word, text, Markdown) | Prepare writes a question bank from it; every suggestion reads it |
+| Before the meeting | **From my sources** on the prep screen, using the title, goal or notes you typed | Pulls open items, last decisions and background into the context box |
+| During the meeting | The **+** beside the ask bar: paste a note or attach a file | Joins the meeting's context straight away, and up to three questions are written from it |
+| During the meeting | Automatic, about 2½ minutes in and again around 12 minutes | Works out the topic from what is being said, names the meeting, and searches your sources |
+
+**Your sources** are set in Settings → Context sources:
+
+- **Find my sources** lists every MCP server in your Claude Code setup (`claude mcp list`): Notion, Google Drive, Confluence, Linear, GitHub, anything you have connected. Tick the ones Cuecard may search.
+- **Notes folder**: point it at a folder of Markdown or text notes (an Obsidian vault, a meeting-notes folder).
+- Lookups run through `claude -p` on your own Claude Code login. Cuecard lists each server's tools once and allows only the ones that read: any tool whose name says it creates, updates, sends, deletes, moves, uploads or changes anything is left out, as are shell and file-writing tools. `Cuecard --sources` prints the servers and exactly which tools are allowed.
+- Cuecard never uses your calendar. Calendar titles are often wrong ("Gym" for a vendor session), so the topic comes from what is said.
 
 ## After the write-up
 

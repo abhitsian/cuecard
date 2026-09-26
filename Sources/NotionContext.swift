@@ -1,10 +1,10 @@
 import Foundation
 
-/// Pulls context for a meeting out of the user's Notion through the Notion connector in their Claude Code login
-/// (`claude -p` with only Notion's read tools allowed). Returns a short brief, or nil when Notion isn't connected
+/// Pulls context for a meeting from the user's own sources: the MCP servers they chose from their Claude Code setup
+/// and an optional notes folder (see ContextSources), through `claude -p` with read-only tools. Returns a short brief, or nil when Notion isn't connected
 /// or nothing relevant turned up.
 enum NotionContext {
-    static let marker = "[From Notion]"
+    static let marker = "[From your sources]"
 
     /// Notion tools that change anything. Blocked, so this can only read.
     private static let writeTools = [
@@ -40,11 +40,16 @@ enum NotionContext {
         let typed = [title.isEmpty || title == "Meeting" ? "" : "Title the user typed: \(title)",
                      goal.isEmpty ? "" : "Their goal: \(goal)",
                      notes.isEmpty ? "" : "Their prep notes:\n\(notes.prefix(2000))"].filter { !$0.isEmpty }.joined(separator: "\n")
+        let prefs = Prefs.shared
+        let tools = await ContextSources.allowedTools()
+        let folder = prefs.contextFolder.isEmpty || !FileManager.default.fileExists(atPath: prefs.contextFolder) ? nil : prefs.contextFolder
+        let sources = [prefs.contextSources.isEmpty ? nil : "their connected sources (\(prefs.contextSources.joined(separator: ", ")))",
+                       folder.map { "their notes folder (\($0)), with Grep, Glob and Read" }].compactMap { $0 }
         let prompt = """
-        The user is in a meeting (\(mode.label)) and wants the context they already have in Notion, so they can ask \
-        better questions. Work out what the meeting is about from what is being said below: the topic, the \
-        project, the people named. Then search their Notion (task tracker, meeting notes, project and workstream \
-        pages) for what relates to it and read the few most relevant pages. Do not create or change anything.
+        The user is in a meeting (\(mode.label)) and wants the context they already have, so they can ask better \
+        questions. Work out what the meeting is about from what is being said below: the topic, the project, the \
+        people named. Then search \(sources.isEmpty ? "nothing (no sources are connected)" : sources.joined(separator: " and ")) \
+        for what relates to it and read the few most relevant items. Do not create, send or change anything.
         The meeting started \(asOf.formatted(date: .complete, time: .shortened)). Use only what was known before \
         then: ignore notes, recaps or pages about this meeting itself.
 
@@ -62,14 +67,21 @@ enum NotionContext {
         What was decided or left open the last time this group or topic met, with the date.
         ## Background
         Facts, numbers or constraints worth having in mind.
-        Name the Notion page each bullet comes from in parentheses. If nothing in Notion relates, put NONE on its \
-        own line after the Topic line.
+        Name the source (page, file or item) each bullet comes from in parentheses. If nothing relates, put NONE on \
+        its own line after the Topic line.
         """
         let process = Process()
         process.executableURL = URL(fileURLWithPath: claude)
-        process.arguments = ["-p", "--model", "sonnet", "--allowedTools", "mcp__claude_ai_Notion",
-                             "--disallowedTools"] + writeTools.map { "mcp__claude_ai_Notion__\($0)" }
-        process.currentDirectoryURL = FileManager.default.temporaryDirectory
+        // Only the read tools of the chosen servers, plus read-only file tools for the notes folder. Everything else,
+        // including every other server and any tool that writes, is unavailable to this run.
+        var allowed = tools
+        if folder != nil { allowed += ["Read", "Grep", "Glob"] }
+        var args = ["-p", "--model", "sonnet"]
+        if !allowed.isEmpty { args += ["--allowedTools"] + allowed }
+        args += ["--disallowedTools", "Write", "Edit", "Bash", "NotebookEdit", "WebFetch"] + writeTools.map { "mcp__claude_ai_Notion__\($0)" }
+        if let folder { args += ["--add-dir", folder] }
+        process.arguments = args
+        process.currentDirectoryURL = folder.map { URL(fileURLWithPath: $0) } ?? FileManager.default.temporaryDirectory
         let input = Pipe(), output = Pipe()
         process.standardInput = input
         process.standardOutput = output
