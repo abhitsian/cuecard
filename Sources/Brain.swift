@@ -73,6 +73,9 @@ final class Brain {
         turnTimer = Timer.scheduledTimer(withTimeInterval: 1.3, repeats: false) { [weak self] _ in self?.flushTurn() }
     }
 
+    /// Every Jev verdict on a turn, with how long Jev took: the demo renderer shows these.
+    var onJudged: ((Speaker, String, [String: Double], TimeInterval) -> Void)?
+
     /// The user asked for help now (⌃⌥N or the button).
     func nudge() { enqueue(.nudge, jump: true) }
 
@@ -146,11 +149,17 @@ final class Brain {
         }
 
         let finalState = state, finalQuestions = questions
+        let asked = Date()
         async let categories = try? jev.ask(state: finalState, questions: finalQuestions)
         async let bankPick = pickFromBank(speaker: speaker, state: finalState, items: bankItems, jev: jev)
         async let framed: Void = judgeFrames(speaker: speaker, text: text, before: before, jev: jev)
         let (answers, pick, _) = await (categories, bankPick, framed)
+        let judgedIn = Date().timeIntervalSince(asked)
         await MainActor.run {
+            if let answers {
+                let scores = answers.answers.compactMapValues(\.noul).filter { $0.value >= 0.5 }
+                self.onJudged?(speaker, text, scores, judgedIn)
+            }
             if let answers { self.apply(answers.answers, speaker: speaker, text: text, sentences: sentences, open: open.map(\.0)) }
             else { self.heuristics(speaker, lines) }
             if let pick { self.applyBank(pick, speaker: speaker, items: bankItems.map(\.0)) }

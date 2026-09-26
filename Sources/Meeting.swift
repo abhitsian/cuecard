@@ -149,7 +149,7 @@ final class Meeting: ObservableObject {
     @Published var themLevel: Float = 0
     @Published var hearsThem = false
     @Published var themSilent = false
-    let started: Date
+    var started: Date
     var ended: Date?
     var file: URL?
 

@@ -1,0 +1,16 @@
+# title: Launch review
+# context: Northwind is launching a redesigned checkout. Sam leads product. Goal: agree the launch plan.
+# context: Revenue by region: US 61%, EU 21%, Canada 12%, APAC 6%. Canada has the fewest payment methods, so it is the lowest-risk first launch.
+# context: Dana leads the payments team, which must sign off the new refund flow before any launch.
+Them(Priya): Quick status on the checkout redesign. We're through ninety percent of the test plan, with two blockers left.
+Them(Priya): The payments team still hasn't signed off on the new refund flow, so we can't ship without them.
+You(Sam): Who's chasing payments on that?
+Them(Marcus): I'll ping Dana today and get a yes or no by Thursday.
+Them(Priya): One open question. Do we launch in every region at once, or start with Canada?
+Them(Priya): Sam, which regions matter most for the Q4 target?
+You(Sam): Start with Canada. It's twelve percent of revenue and the lowest risk.
+Them(Priya): Okay, decided. Canada first, and the other regions two weeks later.
+Them(Priya): Marcus, can you have the rollout plan ready by Monday?
+Them(Marcus): Sure, I'll share it in the launch channel.
+Them(Marcus): Honestly, I'm worried about support load if refunds break on day one.
+You(Sam): Let's run a support dry run next week, before we flip anything on.

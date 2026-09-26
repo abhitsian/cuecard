@@ -52,6 +52,10 @@ With the Notion connector in your Claude Code login, Cuecard can read your Notio
 
 `defaults write com.vaibhav.cuecard afterWriteUp "/path/to/script"` runs that command with the saved note's path once each recap is written (for example, to file it into a notes app).
 
+## Demo video
+
+`demo/launch-review.txt` is a fictional meeting. `Cuecard --demo-render demo/launch-review.txt demo/out 10 -name Sam -about "…"` plays it through the real pipeline (Jev judges each turn, Claude writes the suggestions) and saves the live panel as frames plus `events.json` with every verdict and its latency; the `-name`/`-about` launch arguments override your settings for that run only. `demo/video/build.py` turns that run into a HyperFrames composition (`npx hyperframes render` in `demo/video`). Every label and millisecond in the video comes from the run.
+
 ## Build
 
 `./build.sh` (installs to `~/Applications/Cuecard.app`). Checks without the UI:

@@ -34,15 +34,16 @@ struct Header: View {
                 PulsingDot(color: dotColor(m), pulsing: m.phase == .listening)
                     .id(m.phase == .listening)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(m.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                    Text(m.title).font(.system(size: 13, weight: .semibold)).lineLimit(1).truncationMode(.tail)
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 5) {
-                            Text(m.elapsed).monospacedDigit()
+                            Text(m.elapsed).monospacedDigit().fixedSize()
                             Text("·")
-                            Text(phaseLabel(m))
+                            Text(phaseLabel(m)).lineLimit(1).fixedSize()
                             if m.thinking { ThinkingDots() }
                         }
                         .font(.system(size: 11)).foregroundStyle(Theme.faint)
+                        .lineLimit(1)
                     }
                 }
                 Spacer(minLength: 6)

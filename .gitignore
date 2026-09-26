@@ -2,3 +2,8 @@ build/
 .signing/
 .DS_Store
 node_modules/
+demo/out/
+demo/video/renders/
+demo/video/panel.mp4
+demo/video/.media/
+demo/video/.hyperframes/

@@ -4,6 +4,10 @@ let arguments = CommandLine.arguments
 if let i = arguments.firstIndex(of: "--simulate"), arguments.count > i + 1 {
     let mode = arguments.count > i + 2 && !arguments[i + 2].hasPrefix("--") ? arguments[i + 2] : nil
     Simulate.run(script: arguments[i + 1], mode: mode)
+} else if let i = arguments.firstIndex(of: "--demo-render"), arguments.count > i + 2 {
+    _ = NSApplication.shared
+    let fps = arguments.count > i + 3 ? Double(arguments[i + 3]) ?? 10 : 10
+    MainActor.assumeIsolated { Demo.run(script: arguments[i + 1], out: arguments[i + 2], fps: fps) }
 } else if arguments.contains("--notion") {
     Simulate.notion(arguments)
 } else if let i = arguments.firstIndex(of: "--transcribe") {
