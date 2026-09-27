@@ -851,6 +851,7 @@ struct PrepScreen: View {
     @EnvironmentObject var session: Session
     @EnvironmentObject var prefs: Prefs
     @State private var showAllQuestions = false
+    @State private var briefs: [Brief] = []
 
     var body: some View {
         Scroll {
@@ -864,6 +865,28 @@ struct PrepScreen: View {
                     }
                     .padding(10)
                     .background(RoundedRectangle(cornerRadius: 10).fill(Theme.accent.opacity(0.12)))
+                }
+
+                if !briefs.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label("Briefs for today", systemImage: "doc.text").font(.system(size: 11.5, weight: .semibold)).foregroundStyle(Theme.dim)
+                        ForEach(briefs.prefix(4)) { brief in
+                            let loaded = session.prep.brief == brief.file.lastPathComponent
+                            HStack(spacing: 8) {
+                                Text(brief.when.map { $0.formatted(date: .omitted, time: .shortened) } ?? "")
+                                    .font(.system(size: 11.5).monospacedDigit()).foregroundStyle(Theme.faint)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(brief.title).font(.system(size: 12.5, weight: .medium)).lineLimit(1)
+                                    Text("\(brief.asks.count) questions · \(brief.cues.count) cue cards").font(.system(size: 10.5)).foregroundStyle(Theme.faint)
+                                }
+                                Spacer()
+                                Button(loaded ? "Loaded" : "Use") { session.load(brief) }
+                                    .buttonStyle(SmallButtonStyle(prominent: !loaded)).disabled(loaded)
+                            }
+                        }
+                    }
+                    .padding(10)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Theme.card))
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -967,6 +990,8 @@ struct PrepScreen: View {
             }
             .padding(14)
         }
+        .onAppear { briefs = Brief.today() }
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in briefs = Brief.today() }
     }
 }
 

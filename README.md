@@ -79,6 +79,37 @@ Cuecard's cues are only as good as what it knows about your work. There are four
 - Lookups run through `claude -p` on your own Claude Code login. Cuecard lists each server's tools once and allows only the ones that read: any tool whose name says it creates, updates, sends, deletes, moves, uploads or changes anything is left out, as are shell and file-writing tools. `Cuecard --sources` prints the servers and exactly which tools are allowed.
 - Cuecard never uses your calendar. Calendar titles are often wrong ("Gym" for a vendor session), so the topic comes from what is said.
 
+## Briefs and cue cards
+
+A brief is a Markdown file written before the call into `~/Documents/Cuecard/briefs/`, by hand or by any tool. When a call starts within 20 minutes of a brief's time, and nothing was typed into prep, Cuecard loads that brief. The prep screen also lists the day's briefs, each with a Use button.
+
+```markdown
+---
+title: "Pricing review"
+when: "2026-10-02T14:00"
+mode: "Product review"
+people: "Priya, Marcus"
+goal: "Agree the launch price for Canada"
+---
+# Pricing review
+
+## Where this stands
+...
+## Ask
+- What does support need from us before launch?
+## Cue cards
+### When they say the refund flow won't be signed off in time
+Say: Then Canada waits. We don't launch without payments.
+Ask: What's the latest date Dana can give us a yes or no?
+```
+
+Each part of the brief is used differently:
+- **Context:** everything above `## Cue cards`.
+- **Question bank:** the `## Ask` list.
+- **Cue cards:** each `### When ...` card is a situation Jev watches for in what the other side says. When one happens, its Say and Ask lines appear as cards. A card shows again only after 5 minutes.
+
+`Cuecard --simulate` takes a `# brief: <path>` line, which lets you test cue cards against a scripted meeting.
+
 ## After the write-up
 
 `defaults write com.vaibhav.cuecard afterWriteUp "/path/to/script"` runs that command with the saved note's path once each recap is written (for example, to file it into a notes app).

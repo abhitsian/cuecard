@@ -118,6 +118,9 @@ final class Brain {
              meeting.bank.filter { !$0.asked }.prefix(40).map { ($0.id, $0.text) },
              meeting.attendees, meeting.lookupTopic)
         }
+        let cueItems = await MainActor.run {
+            meeting.cues.filter { cue in cue.shownAt.map { Date().timeIntervalSince($0) > 300 } ?? true }.prefix(30).map { ($0.id, $0.situation) }
+        }
         let mode = meeting.mode
         var state: [String: Any] = [
             "meeting": ["type": "\(mode.label). \(mode.blurb)", "user": prefs.name, "attendees": attendees,
@@ -165,7 +168,8 @@ final class Brain {
         async let categories = try? jev.ask(state: finalState, questions: finalQuestions)
         async let bankPick = pickFromBank(speaker: speaker, state: finalState, items: bankItems, jev: jev)
         async let framed: Void = judgeFrames(speaker: speaker, text: text, before: before, jev: jev)
-        let (answers, pick, _) = await (categories, bankPick, framed)
+        async let cuePick = pickCue(speaker: speaker, state: finalState, items: cueItems, jev: jev)
+        let (answers, pick, _, cue) = await (categories, bankPick, framed, cuePick)
         let judgedIn = Date().timeIntervalSince(asked)
         await MainActor.run {
             if let answers {
@@ -179,6 +183,8 @@ final class Brain {
             }
             if let answers { self.apply(answers.answers, speaker: speaker, text: text, sentences: sentences, open: open.map(\.0)) }
             else { self.heuristics(speaker, lines) }
+            // A prepared situation outranks a bank question: its Ask holds the bank back for the usual 20 seconds.
+            if let cue { self.applyCue(cue, items: cueItems.map(\.0)) }
             if let pick { self.applyBank(pick, speaker: speaker, items: bankItems.map(\.0)) }
         }
     }
@@ -315,6 +321,30 @@ final class Brain {
         let shown = ends.suffix(4) + (ends.count > 4 ? ["+\(ends.count - 4) more"] : [])
         _ = meeting.add(Card(kind: .flag, text: "Before you wrap\n" + shown.joined(separator: "\n"), source: "Jev · wrapping up"))
         Log.write("loose ends: \(ends.count)")
+    }
+
+    /// Which situation prepared in the brief (if any) is happening in what the other side just said.
+    private func pickCue(speaker: Speaker, state: [String: Any], items: [(UUID, String)], jev: Jev.Client) async -> Jev.Answer? {
+        guard speaker == .them, !items.isEmpty else { return nil }
+        var options = items.enumerated().map { (key: "c\($0.offset)", meaning: Optional($0.element.1)) }
+        options.append((key: "none", meaning: "None of these situations is happening in this turn"))
+        let question = Jev.Question.choice("Before the meeting the user prepared for these situations. Is one of them happening in `latest.text`, what the other side just said? Choose none unless it clearly is.", options: options)
+        return try? await jev.ask(state: state, questions: ["cue": question]).answers["cue"]
+    }
+
+    private func applyCue(_ a: Jev.Answer, items: [UUID]) {
+        guard let choice = a.choice, choice != "none", let i = Int(choice.dropFirst()), items.indices.contains(i) else { return }
+        let probability = a.probabilities?[choice] ?? 0
+        Log.write("jev cue: \(choice) p=\(String(format: "%.2f", probability))")
+        guard probability >= 0.5, let cue = meeting.cues.first(where: { $0.id == items[i] }) else { return }
+        meeting.cues = meeting.cues.map { var c = $0; if c.id == cue.id { c.shownAt = Date() }; return c }
+        let source = "From your brief · \(cue.situation)"
+        if let say = cue.say { _ = meeting.add(Card(kind: .say, text: say, source: source, score: probability)) }
+        if let ask = cue.ask, meeting.add(Card(kind: .ask, text: ask, source: source, score: probability)) != nil {
+            lastAskShown = Date()
+            turnsSinceAsk = 0
+        }
+        if cue.say != nil { onUrgent?() }
     }
 
     private func applyBank(_ a: [String: Jev.Answer], speaker: Speaker, items: [UUID]) {

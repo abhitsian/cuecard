@@ -14,22 +14,30 @@ enum Simulate {
         var topic: String?
         var frameIDs: [String]?
         var elapsed: Double = 0  // "# elapsed: 600" starts the meeting as if it began that many seconds ago
+        var brief: Brief?        // "# brief: <path>" loads a prepared brief: context, question bank and cue cards
         for raw in text.components(separatedBy: "\n") {
             let line = raw.trimmingCharacters(in: .whitespaces)
             if line.hasPrefix("# title:") { title = String(line.dropFirst(8)).trimmingCharacters(in: .whitespaces) }
             else if line.hasPrefix("# with:") { attendees = line.dropFirst(7).split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) } }
             else if line.hasPrefix("# topic:") { topic = String(line.dropFirst(8)).trimmingCharacters(in: .whitespaces) }
             else if line.hasPrefix("# elapsed:") { elapsed = Double(line.dropFirst(10).trimmingCharacters(in: .whitespaces)) ?? 0 }
+            else if line.hasPrefix("# brief:") { brief = Brief.parse(URL(fileURLWithPath: (String(line.dropFirst(8)).trimmingCharacters(in: .whitespaces) as NSString).expandingTildeInPath)) }
             else if line.hasPrefix("# goal:") { goal = String(line.dropFirst(7)).trimmingCharacters(in: .whitespaces) }
             else if line.hasPrefix("# context:") { context += String(line.dropFirst(10)).trimmingCharacters(in: .whitespaces) + "\n" }
             else if line.hasPrefix("# frames:") { frameIDs = line.dropFirst(9).split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) } }
-            else if line.hasPrefix("You:") { lines.append((.you, String(line.dropFirst(4)).trimmingCharacters(in: .whitespaces))) }
-            else if line.hasPrefix("Them:") { lines.append((.them, String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces))) }
+            else if let m = line.firstMatch(of: #/^(You|Them)(?:\(.+?\))?:\s*(.+)$/#) { lines.append((m.1 == "You" ? .you : .them, String(m.2))) }
         }
         let meeting = Meeting(title: title, mode: Playbook.Mode(rawValue: mode ?? "") ?? .general, goal: goal, context: context,
                               attendees: attendees)
         meeting.lookupTopic = topic  // as if a lookup had already run for this topic
         meeting.started = Date().addingTimeInterval(-elapsed)
+        if let brief {
+            meeting.context += (meeting.context.isEmpty ? "" : "\n\n") + brief.context
+            if meeting.goal.isEmpty { meeting.goal = brief.goal }
+            meeting.bank = brief.asks.map { BankQuestion(topic: "Brief", text: $0) }
+            meeting.cues = brief.cues
+            print("brief: \(brief.asks.count) questions, \(brief.cues.count) cue cards")
+        }
         let library = Frame.all()
         meeting.frames = (frameIDs ?? Frame.defaults(for: meeting.mode)).compactMap { id in library.first { $0.id == id } }
         let brain = Brain(meeting: meeting)

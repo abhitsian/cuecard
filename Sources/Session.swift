@@ -23,6 +23,9 @@ final class Session: ObservableObject {
         var notionNote: String?
         /// Answer structures to grade live (frame ids).
         var frames: [String] = Frame.defaults(for: Prefs.shared.lastMode)
+        /// The brief this prep came from, and its prepared situations.
+        var brief: String?
+        var cues: [Cue] = []
     }
 
     /// Every frame on disk, loaded once and refreshed when prep opens.
@@ -67,6 +70,20 @@ final class Session: ObservableObject {
         prep.context = Prefs.shared.savedContext(for: mode)
         prep.bank = []
         prep.frames = Frame.defaults(for: mode)
+    }
+
+    /// Fills prep from a brief written before the call: title, mode, goal, people and context, its questions as the
+    /// bank, and its cue cards for Jev to watch for.
+    func load(_ brief: Brief) {
+        setMode(brief.mode)
+        prep.title = brief.title
+        prep.goal = brief.goal
+        prep.attendees = brief.people
+        prep.context = brief.context
+        prep.bank = brief.asks.map { BankQuestion(topic: "Brief", text: $0) }
+        prep.cues = brief.cues
+        prep.brief = brief.file.lastPathComponent
+        Log.write("brief: loaded \(brief.file.lastPathComponent) asks=\(brief.asks.count) cues=\(brief.cues.count)")
     }
 
     private var fullContext: String {
@@ -218,6 +235,8 @@ final class Session: ObservableObject {
         guard meeting?.live != true else { return }
         // The last meeting may still be writing up; it finishes on its own. Start from a clean prep.
         if meeting != nil { reset() }
+        // Nothing set up by hand and a brief was written for a call starting about now: use it.
+        if prep.brief == nil, prep.title.isEmpty, prep.goal.isEmpty, let brief = Brief.now() { load(brief) }
         let prefs = Prefs.shared
         prefs.lastMode = prep.mode
         prefs.saveContext(prep.context, for: prep.mode)
@@ -225,6 +244,7 @@ final class Session: ObservableObject {
         let m = Meeting(title: title, mode: prep.mode, goal: prep.goal, context: fullContext, attendees: prep.attendees)
         m.userTitled = !prep.title.isEmpty
         m.bank = prep.bank
+        m.cues = prep.cues
         m.frames = prep.frames.compactMap { id in library.first { $0.id == id } }
         m.hearsThem = prefs.systemAudio
         meeting = m

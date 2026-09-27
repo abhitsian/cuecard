@@ -161,6 +161,8 @@ final class Meeting: ObservableObject {
     /// Every Jev verdict, for the board: which turn, what it scored, how long it took.
     @Published var judgements: [Judgement] = []
     @Published var bank: [BankQuestion] = []
+    /// Situations prepared in the brief, each with what to say or ask when it comes up.
+    @Published var cues: [Cue] = []
     /// The answer structures being graded, and where the answer stands on each step ("frame.node" → state).
     @Published var frames: [Frame] = []
     @Published var map: [String: NodeState] = [:]
