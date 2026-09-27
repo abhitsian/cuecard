@@ -38,6 +38,15 @@ Signals by mode:
 
 Follow-up questions come from two places: the **question bank** Claude writes from your prep (Jev picks the one that fits the moment and ticks it off when you ask it), and **live questions** Claude writes when a signal or a vague answer needs a new one.
 
+## Live moments
+
+Two cues appear the moment Jev's verdict comes back, with no Claude call, because they only help before the conversation moves on:
+
+- **Lukewarm yes.** When the other side agrees while hedging ("I guess we can try for Friday", a yes with a condition, a quick "sure" to a big ask), an Ask card suggests asking what would make it a clear yes. Meeting, review, decision, customer and 1:1 modes; at most once every 3 minutes.
+- **Before you wrap.** When someone starts wrapping up ("anything else?", "we're almost at time") after the first 5 minutes, one card lists what would leave the room unresolved: tasks with no owner or date, work someone said needs doing that nobody took on, and questions nobody answered. Once per meeting.
+
+Everything else (decisions, status, who agreed to what) is left to the recap, which reads the whole transcript.
+
 ## Use
 
 - ⌃⌥A start / stop · ⌃⌥S show / hide the panel · ⌃⌥N help me now

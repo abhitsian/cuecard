@@ -21,6 +21,8 @@ if let i = arguments.firstIndex(of: "--simulate"), arguments.count > i + 1 {
         exit(0)
     }
     RunLoop.main.run()
+} else if let i = arguments.firstIndex(of: "--judge"), arguments.count > i + 2 {
+    Simulate.judge(cases: arguments[i + 1], out: arguments[i + 2])
 } else if arguments.contains("--notion") {
     Simulate.notion(arguments)
 } else if let i = arguments.firstIndex(of: "--transcribe") {

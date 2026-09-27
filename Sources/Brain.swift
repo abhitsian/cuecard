@@ -44,6 +44,8 @@ final class Brain {
     }
 
     var usesJev: Bool { jev != nil }
+    /// For `--judge`: cards land on the board as judged, with no Claude calls (no tidy wording, no suggestions).
+    var dryRun = false
 
     func start() {
         claude.warm(model: prefs.model.rawValue, system: Prompts.live)
@@ -135,6 +137,11 @@ final class Brain {
         }
         if speaker == .them {
             for signal in mode.signals { questions["sig_" + signal.key] = .noul(signal.question) }
+            if Brain.lukewarmModes.contains(mode) { questions["lukewarm"] = .noul(Brain.lukewarmQuestion) }
+        }
+        if !looseEndsShown {
+            questions["wrap_up"] = .noul(Brain.wrapUpQuestion)
+            questions["unowned"] = .noul(Brain.unownedQuestion)
         }
         var owners: [(key: String, meaning: String?)] = [("you", "The user (speaker You) will do it"), ("them", "Someone else in the meeting will do it"), ("unclear", "No clear owner")]
         for name in attendees.prefix(6) { owners.append((name, "\(name) will do it")) }
@@ -201,7 +208,16 @@ final class Brain {
            let i = Int(choice.dropFirst()), open.indices.contains(i) {
             meeting.update(open[i]) { $0.resolved = text }
         }
+        if p("wrap_up") >= 0.8 { showLooseEnds() }
+        if speaker == .them, p("lukewarm") >= 0.8 { showLukewarm(text) }
         if p("filler") >= 0.75, p("asked_you") < 0.6 { return }
+        // Work nobody took on is the loose end that matters most at the end of a meeting, so it goes on the board
+        // as a task without an owner even though no one committed to it.
+        if p("unowned") >= 0.8, p("action_item") < 0.7, meeting.mode.captures.contains(.action) {
+            var card = Card(kind: .action, text: text, quote: text, source: "Jev · no owner")
+            card.score = p("unowned")
+            capture(card)
+        }
 
         if speaker == .them, p("asked_you") >= 0.7, meeting.mode.captures.contains(.askedYou) { enqueue(.asked(text)) }
 
@@ -221,7 +237,8 @@ final class Brain {
             // An open question counts whoever raised it, including one put to the user: it stays open until a
             // later turn answers it (Jev's `resolves`), which is what makes it worth tracking.
             ("question", p("open_question"), { Card(kind: .question, text: sentence("s_question"), quote: sentence("s_question"), source: "Jev") }),
-            ("risk", p("risk") - 0.02, { Card(kind: .risk, text: text, quote: text, source: "Jev") }),
+            // Real risks score high; long status updates brush 0.6 to 0.8 (labelled eval, 26 Sep 2026).
+            ("risk", p("risk") >= 0.85 ? p("risk") - 0.02 : 0, { Card(kind: .risk, text: text, quote: text, source: "Jev") }),
             ("fact", text.hasSuffix("?") ? 0 : p("key_fact") - 0.12, { Card(kind: .fact, text: text, quote: text, source: "Jev") }),
         ]
         var families: Set<String> = []
@@ -254,6 +271,50 @@ final class Brain {
         }
         if speaker == .them, p("vague") >= 0.8, !signalled, p("asked_you") < 0.7, meeting.frames.isEmpty { enqueue(.vague(text)) }
         if speaker == .them { turnsSinceAsk += 1 }
+    }
+
+    // MARK: Live moments (shown instantly from Jev's verdict, no Claude)
+
+    static let lukewarmModes: Set<Playbook.Mode> = [.general, .review, .decision, .customer, .oneOnOne]
+    static let lukewarmQuestion = "Does `latest.text` agree to something proposed or asked in `recent` while signalling doubt or low commitment: a hedged yes (\"I guess\", \"should be fine\", \"we can try\", \"probably\"), a yes with a condition attached, or a quick \"sure\" to a big ask?"
+    static let unownedQuestion = "Does `latest.text` name work that needs doing without anyone taking it on (\"we still need someone to…\", \"somebody should…\", \"who's going to…\")?"
+    static let wrapUpQuestion = "Does `latest.text` start wrapping up the whole meeting: asking \"anything else?\", saying time is nearly up, thanking everyone for their time, or turning to final next steps?"
+
+    private var lastLukewarm = Date.distantPast
+    private(set) var looseEndsShown = false
+
+    /// A soft yes is worth probing only before the conversation moves on, so the cue appears with Jev's verdict.
+    private func showLukewarm(_ text: String) {
+        guard Date().timeIntervalSince(lastLukewarm) > 180 else { return }
+        lastLukewarm = Date()
+        _ = meeting.add(Card(kind: .ask, text: "That sounded like a soft yes. Ask what would make it a clear yes.", quote: text, source: "Jev · lukewarm yes"))
+        Log.write("jev: lukewarm | \(text.prefix(80))")
+    }
+
+    /// When the meeting starts wrapping up, lists what would otherwise leave the room unresolved: tasks without an
+    /// owner or a date, and questions nobody answered. Once per meeting, and only after five minutes.
+    func showLooseEnds() {
+        guard !looseEndsShown, Date().timeIntervalSince(meeting.started) > 300 else { return }
+        let live = meeting.cards.filter { !$0.dismissed }
+        var ends: [String] = []
+        // Next steps ("other regions follow two weeks later") describe the plan, not work someone has to pick up.
+        for task in live where task.kind == .action {
+            let noOwner = task.owner == nil || task.owner == "unclear"
+            if noOwner && task.due == nil { ends.append("No owner or date: \(task.text)") }
+            else if noOwner { ends.append("No owner: \(task.text)") }
+            else if task.due == nil { ends.append("No date: \(task.text)") }
+        }
+        let taskWords = live.filter { $0.kind == .action }.map { Meeting.words($0.text) }
+        for question in live where question.kind == .question && question.resolved == nil {
+            let words = Meeting.words(question.text)
+            guard !taskWords.contains(where: { Meeting.overlap(words, $0) > 0.5 }) else { continue } // already listed as a task
+            ends.append("Still open: \(question.text)")
+        }
+        looseEndsShown = true
+        guard !ends.isEmpty else { return Log.write("loose ends: none") }
+        let shown = ends.suffix(4) + (ends.count > 4 ? ["+\(ends.count - 4) more"] : [])
+        _ = meeting.add(Card(kind: .flag, text: "Before you wrap\n" + shown.joined(separator: "\n"), source: "Jev · wrapping up"))
+        Log.write("loose ends: \(ends.count)")
     }
 
     private func applyBank(_ a: [String: Jev.Answer], speaker: Speaker, items: [UUID]) {
@@ -402,6 +463,7 @@ final class Brain {
 
     private func capture(_ card: Card) {
         var card = card
+        if dryRun { _ = meeting.add(card); return }
         card.refining = true
         guard let id = meeting.add(card) else { return }
         refineQueue.append(id)
@@ -442,6 +504,7 @@ final class Brain {
     private var recentAsked: [(at: Date, words: Set<String>)] = []
 
     private func enqueue(_ reason: Reason, jump: Bool = false) {
+        if dryRun { return }
         guard meeting.phase == .listening || jump else { return }
         if case .asked(let q) = reason {
             let words = Meeting.words(q)

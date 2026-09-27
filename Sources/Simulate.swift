@@ -13,11 +13,13 @@ enum Simulate {
         var attendees: [String] = []
         var topic: String?
         var frameIDs: [String]?
+        var elapsed: Double = 0  // "# elapsed: 600" starts the meeting as if it began that many seconds ago
         for raw in text.components(separatedBy: "\n") {
             let line = raw.trimmingCharacters(in: .whitespaces)
             if line.hasPrefix("# title:") { title = String(line.dropFirst(8)).trimmingCharacters(in: .whitespaces) }
             else if line.hasPrefix("# with:") { attendees = line.dropFirst(7).split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) } }
             else if line.hasPrefix("# topic:") { topic = String(line.dropFirst(8)).trimmingCharacters(in: .whitespaces) }
+            else if line.hasPrefix("# elapsed:") { elapsed = Double(line.dropFirst(10).trimmingCharacters(in: .whitespaces)) ?? 0 }
             else if line.hasPrefix("# goal:") { goal = String(line.dropFirst(7)).trimmingCharacters(in: .whitespaces) }
             else if line.hasPrefix("# context:") { context += String(line.dropFirst(10)).trimmingCharacters(in: .whitespaces) + "\n" }
             else if line.hasPrefix("# frames:") { frameIDs = line.dropFirst(9).split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) } }
@@ -27,6 +29,7 @@ enum Simulate {
         let meeting = Meeting(title: title, mode: Playbook.Mode(rawValue: mode ?? "") ?? .general, goal: goal, context: context,
                               attendees: attendees)
         meeting.lookupTopic = topic  // as if a lookup had already run for this topic
+        meeting.started = Date().addingTimeInterval(-elapsed)
         let library = Frame.all()
         meeting.frames = (frameIDs ?? Frame.defaults(for: meeting.mode)).compactMap { id in library.first { $0.id == id } }
         let brain = Brain(meeting: meeting)

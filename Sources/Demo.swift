@@ -31,9 +31,11 @@ enum Demo {
         guard let text = try? String(contentsOfFile: path, encoding: .utf8) else { print("can't read \(path)"); exit(1) }
         var title = "Meeting", context = ""
         var lines: [(Speaker, String, String)] = []
+        var elapsed: Double = 0
         for raw in text.components(separatedBy: "\n") {
             let line = raw.trimmingCharacters(in: .whitespaces)
             if line.hasPrefix("# title:") { title = String(line.dropFirst(8)).trimmingCharacters(in: .whitespaces); continue }
+            if line.hasPrefix("# elapsed:") { elapsed = Double(line.dropFirst(10).trimmingCharacters(in: .whitespaces)) ?? 0; continue }
             if line.hasPrefix("# context:") { context += String(line.dropFirst(10)).trimmingCharacters(in: .whitespaces) + "\n"; continue }
             guard let m = line.firstMatch(of: #/^(You|Them)(?:\((.+?)\))?:\s*(.+)$/#) else { continue }
             lines.append((m.1 == "You" ? .you : .them, m.2.map(String.init) ?? String(m.1), String(m.3)))
@@ -167,7 +169,7 @@ enum Demo {
         // Let the question bank get written first, as prep would, then start the clock and the meeting.
         DispatchQueue.main.asyncAfter(deadline: .now() + 8) {
             started = Date()
-            meeting.started = started
+            meeting.started = started.addingTimeInterval(-elapsed)  // "# elapsed:" joins a meeting already under way
             recording = true
             speak()
         }

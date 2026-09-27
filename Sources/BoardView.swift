@@ -57,7 +57,7 @@ extension CardKind {
 
 extension Card {
     /// Suggestions Jev chose from the prepared bank, versus words Claude wrote.
-    var pickedByJev: Bool { source?.hasPrefix("From your prep") == true || source == "Asked earlier" }
+    var pickedByJev: Bool { source?.hasPrefix("From your prep") == true || source == "Asked earlier" || source?.hasPrefix("Jev · ") == true }
     /// Claude rewrote a captured sentence into a clean note.
     var tidied: Bool { kind.quadrant != nil && quote != nil && quote != text && !refining }
 }
@@ -218,10 +218,17 @@ struct BoardContent: View {
     /// actually filed, outlined when Jev leaned that way but the item wasn't kept (Cuecard files at most two per turn).
     private func verdictRow(_ v: Judgement) -> some View {
         let appear = min(1, max(0, now.timeIntervalSince(v.at) / 0.25))
+        // The live moments show a chip only at the score where their cue fires.
+        let moments: [(String, Quadrant?, Double)] = [
+            ("lukewarm", nil, (v.scores["lukewarm"] ?? 0) >= 0.8 ? v.scores["lukewarm"]! : 0),
+            ("wrap_up", nil, (v.scores["wrap_up"] ?? 0) >= 0.8 ? v.scores["wrap_up"]! : 0),
+            ("unowned", .tasks, (v.scores["unowned"] ?? 0) >= 0.8 ? v.scores["unowned"]! : 0),
+        ]
         let hits: [(String, Quadrant?, Double)] = [
             ("asked_you", nil, v.scores["asked_you"] ?? 0),
-        ] + Quadrant.allCases.flatMap { q in q.categories.map { (key: $0, q: q, s: v.scores[$0] ?? 0) } }.map { ($0.key, $0.q, $0.s) }
+        ] + moments + Quadrant.allCases.flatMap { q in q.categories.map { (key: $0, q: q, s: v.scores[$0] ?? 0) } }.map { ($0.key, $0.q, $0.s) }
         let strong = hits.filter { $0.2 >= 0.7 }.sorted { $0.2 > $1.2 }
+        let names = ["asked_you": "Asked you → Claude", "lukewarm": "Soft yes → cue", "wrap_up": "Wrapping up → cue", "unowned": "No owner"]
         let filedKinds = Set(meeting.cards.filter { card in
             card.kind.quadrant != nil && abs(card.at.timeIntervalSince(v.at)) < 1.5
         }.compactMap { $0.kind.quadrant })
@@ -239,7 +246,7 @@ struct BoardContent: View {
             ForEach(Array(strong.prefix(3).enumerated()), id: \.offset) { _, hit in
                 let color = hit.1?.color ?? BoardStyle.jev
                 let filed = hit.1.map { filedKinds.contains($0) } ?? true
-                Text("\(hit.1?.rawValue ?? "Asked you → Claude") \(String(format: "%.2f", hit.2))")
+                Text("\(names[hit.0] ?? hit.1?.rawValue ?? hit.0) \(String(format: "%.2f", hit.2))")
                     .font(.system(size: 17, weight: .semibold, design: .monospaced))
                     .foregroundStyle(filed ? BoardStyle.bg : color)
                     .padding(.horizontal, 10).padding(.vertical, 5)
@@ -305,7 +312,7 @@ struct BoardContent: View {
                     .lineLimit(1)
             }
             HStack(spacing: 10) {
-                if let owner = card.owner { tag(owner, q.color) }
+                if let owner = card.owner { tag(owner, q.color) } else if card.source == "Jev · no owner" { tag("No owner", Quadrant.risks.color) }
                 if let due = card.due { tag(due, q.color) }
                 if let score = card.score {
                     Text("Jev \(String(format: "%.2f", score))").font(.system(size: 15, weight: .semibold, design: .monospaced))
@@ -334,7 +341,10 @@ struct BoardContent: View {
     // MARK: Cues
 
     private var cues: some View {
-        let recent = Array(meeting.cards.filter { ($0.kind == .ask || $0.kind == .say) && !$0.dismissed }.suffix(3).reversed())
+        // The wrap-up card stays first once it appears: it is the last thing worth doing before people leave.
+        let wrap = meeting.cards.last { $0.kind == .flag && $0.source == "Jev · wrapping up" && !$0.dismissed }
+        let others = meeting.cards.filter { ($0.kind == .ask || $0.kind == .say) && !$0.dismissed }.suffix(wrap == nil ? 3 : 2).reversed()
+        let recent = (wrap.map { [$0] } ?? []) + Array(others)
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 Text("CUES").font(.system(size: 17, weight: .bold)).tracking(1.5).foregroundStyle(BoardStyle.dim)
@@ -356,8 +366,9 @@ struct BoardContent: View {
         let color = jev ? BoardStyle.jev : BoardStyle.claude
         let age = now.timeIntervalSince(card.at)
         let fresh = max(0, 1 - age / 3)
+        let moment = card.source?.hasPrefix("Jev · ") == true ? String(card.source!.dropFirst(6)) : nil
         let detail: String = jev
-            ? "picked from your prep" + (card.score.map { " · \(String(format: "%.2f", $0))" } ?? "")
+            ? (moment ?? "picked from your prep" + (card.score.map { " · \(String(format: "%.2f", $0))" } ?? ""))
             : (card.kind == .say ? "you were asked" : (card.source ?? "").components(separatedBy: " · ").first?.lowercased() ?? "")
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
@@ -365,14 +376,23 @@ struct BoardContent: View {
                 Text(jev ? "JEV PICKED" : "CLAUDE WROTE").font(.system(size: 15, weight: .heavy)).tracking(1)
                 Text(detail).font(.system(size: 15, weight: .medium)).foregroundStyle(color.opacity(0.75)).lineLimit(1)
                 Spacer(minLength: 0)
-                Text(card.kind == .say ? "SAY" : "ASK").font(.system(size: 14, weight: .heavy))
+                Text(card.kind == .say ? "SAY" : card.kind == .flag ? "WRAP" : "ASK").font(.system(size: 14, weight: .heavy))
                     .foregroundStyle(BoardStyle.bg).padding(.horizontal, 7).padding(.vertical, 2)
                     .background(Capsule().fill(color))
             }
             .foregroundStyle(color)
-            Text(card.text.components(separatedBy: "\n").first ?? card.text)
-                .font(.system(size: card.kind == .say ? 23 : 21, weight: card.kind == .say ? .semibold : .medium))
-                .foregroundStyle(BoardStyle.ink).lineLimit(4)
+            if card.kind == .flag {
+                // The loose-ends list: one line per item, the heading already says what it is.
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(card.text.components(separatedBy: "\n").dropFirst().prefix(3).enumerated()), id: \.offset) { _, item in
+                        Text(item).font(.system(size: 19, weight: .medium)).foregroundStyle(BoardStyle.ink).lineLimit(2)
+                    }
+                }
+            } else {
+                Text(card.text.components(separatedBy: "\n").first ?? card.text)
+                    .font(.system(size: card.kind == .say ? 23 : 21, weight: card.kind == .say ? .semibold : .medium))
+                    .foregroundStyle(BoardStyle.ink).lineLimit(4)
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .topLeading)
